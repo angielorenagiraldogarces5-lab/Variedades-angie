@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagarés - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .card-table { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); overflow: hidden; }
+        .card-table .table thead th { background: #ff6bb3; color: #fff; border: none; font-size: 13px; }
+        .card-table .table td, .card-table .table th { vertical-align: middle; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .btn-danger-soft { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; border-radius: 10px; font-weight: 600; }
+        .btn-danger-soft:hover { background: #c2185b; color: #fff; }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(216, 27, 96, 0.18); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .badge-vigente { background: #e8f4ff; color: #1d4ed8; border: 1px solid #9cc8ff; }
+        .badge-pagado { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; }
+        .badge-cancelado { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-file-signature me-2"></i>Pagarés</h2>
+                <p class="page-subtitle mb-0">Documentos de promesa de pago firmados por el cliente.</p>
+            </div>
+            <a href="/pagares/nuevo" class="btn btn-pink px-4 py-2">
+                <i class="fas fa-plus me-2"></i>Nuevo Pagaré
+            </a>
+        </div>
+
+        {% set total_pagares = pagares|length %}
+        {% set vigentes = pagares.values()|selectattr('estado', 'equalto', 'Vigente')|list %}
+        {% set monto_vigente = vigentes|sum(attribute='monto') %}
+        {% set monto_total = pagares.values()|sum(attribute='monto') %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-file-signature"></i></div>
+                    <div>
+                        <div class="text-muted small">Pagarés registrados</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_pagares }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e8f4ff; color:#1d4ed8;"><i class="fas fa-file-contract"></i></div>
+                    <div>
+                        <div class="text-muted small">Vigentes</div>
+                        <div class="fw-bold fs-4" style="color:#1d4ed8;">{{ vigentes|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Monto en vigencia</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ monto_vigente|money }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card card-table">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Pagaré</th>
+                            <th>Fecha</th>
+                            <th>Deudor</th>
+                            <th>Origen</th>
+                            <th>Vencimiento</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for numero, p in pagares.items()|sort(reverse=true) %}
+                        <tr>
+                            <td class="fw-bold" style="color:#d81b60;"><i class="fas fa-file-signature me-2"></i>{{ numero }}</td>
+                            <td>{{ p.fecha }}</td>
+                            <td>{{ p.cliente.nombre }}</td>
+                            <td>
+                                {% if p.origen %}
+                                    <span class="text-muted">{{ p.origen.tipo }}</span>
+                                    <a href="/fiados/{{ p.origen.numero }}" class="text-decoration-none" style="color:#ff6bb3;">{{ p.origen.numero }}</a>
+                                {% else %}
+                                    <span class="text-muted">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ p.fecha_vencimiento or '—' }}</td>
+                            <td class="fw-bold">{{ p.monto|money }}</td>
+                            <td>
+                                {% if p.estado == 'Vigente' %}
+                                    <span class="badge badge-vigente"><i class="fas fa-circle me-1"></i>Vigente</span>
+                                {% elif p.estado == 'Pagado' %}
+                                    <span class="badge badge-pagado"><i class="fas fa-check-circle me-1"></i>Pagado</span>
+                                {% else %}
+                                    <span class="badge badge-cancelado"><i class="fas fa-times-circle me-1"></i>Cancelado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="/pagares/{{ numero }}" class="btn btn-sm btn-outline-purple">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                {% if session.get('rol') in ['Admin', 'Dueño'] %}
+                                <form method="POST" action="/pagares/{{ numero }}/eliminar" class="d-inline"
+                                      onsubmit="return confirm('¿Estás seguro de eliminar el pagaré {{ numero }}?');">
+                                    <button class="btn btn-sm btn-danger-soft"><i class="fas fa-trash"></i></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>No hay pagarés registrados todavía.
+                                <a href="/pagares/nuevo" class="d-block mt-2" style="color:#ff6bb3;">Crear el primero <i class="fas fa-arrow-right"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

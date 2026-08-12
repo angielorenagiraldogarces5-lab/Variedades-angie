@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de {{ p.nombre }} - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .card-table { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); overflow: hidden; }
+        .card-table .table thead th { background: #ff6bb3; color: #fff; border: none; font-size: 13px; }
+        .card-table .table td, .card-table .table th { vertical-align: middle; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .btn-danger-soft { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; border-radius: 10px; font-weight: 600; }
+        .btn-danger-soft:hover { background: #c2185b; color: #fff; }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .badge-entrada { background: #e9fbe9; color: #2e7d32; border: 1px solid #9ed89e; }
+        .badge-salida { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; }
+        .badge-cat { background: #ffe3ef; color: #d81b60; border: 1px solid #ff9ec9; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/inventario" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Inventario</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-cube me-2"></i>{{ p.nombre }}</h2>
+                <p class="page-subtitle mb-0">
+                    Producto #{{ pid }}
+                    {% if p.categoria %}<span class="badge badge-cat ms-1"><i class="fas fa-tag me-1"></i>{{ p.categoria }}</span>{% endif %}
+                    {% if not p.control_stock %}<span class="badge bg-secondary ms-1">Sin control de stock</span>{% endif %}
+                </p>
+            </div>
+            <a href="/inventario" class="btn btn-outline-purple px-3 py-2"><i class="fas fa-arrow-left me-2"></i>Volver al inventario</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff6bb3,#ff9ec9);"><i class="fas fa-boxes"></i></div>
+                        <div>
+                            <div class="small text-muted">Stock actual</div>
+                            <div class="fw-bold fs-5" style="color:#d81b60;">
+                                {% if p.control_stock %}{{ '%g'|format(p.stock|default(0)|float) }}{% else %}<span class="text-muted fs-6">Sin control</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#26a69a,#4db6ac);"><i class="fas fa-warehouse"></i></div>
+                        <div>
+                            <div class="small text-muted">Stock físico</div>
+                            <div class="fw-bold fs-5" style="color:#00897b;">
+                                {% if p.control_stock %}{{ p.stock_fisico if p.stock_fisico is not none else '—' }}{% else %}<span class="text-muted fs-6">—</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2e7d32,#66bb6a);"><i class="fas fa-dollar-sign"></i></div>
+                        <div>
+                            <div class="small text-muted">Valor del stock</div>
+                            <div class="fw-bold fs-5" style="color:#2e7d32;">{{ valor|money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9800,#ffb74d);"><i class="fas fa-money-check-alt"></i></div>
+                        <div>
+                            <div class="small text-muted">Costo unitario</div>
+                            <div class="fw-bold fs-5" style="color:#e65100;">{{ p.costo|default(0)|money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1565c0,#64b5f6);"><i class="fas fa-tag"></i></div>
+                        <div>
+                            <div class="small text-muted">Precio de venta</div>
+                            <div class="fw-bold fs-5" style="color:#1565c0;">{{ p.precio|money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-table mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                <span class="fw-bold"><i class="fas fa-history me-2"></i>Movimientos del producto</span>
+                <span class="badge bg-light" style="color:#d81b60;">{{ movimientos|length }} movimiento(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mid, m in movimientos %}
+                        <tr>
+                            <td class="fw-bold" style="color:#d81b60;">{{ mid }}</td>
+                            <td>{{ m.fecha }}</td>
+                            <td>
+                                {% if m.tipo == 'Entrada' %}
+                                    <span class="badge badge-entrada"><i class="fas fa-arrow-down me-1"></i>Entrada</span>
+                                {% else %}
+                                    <span class="badge badge-salida"><i class="fas fa-arrow-up me-1"></i>Salida</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">{{ '%g'|format(m.cantidad|float) }}</td>
+                            <td class="small text-muted">{{ m.motivo }}{% if m.referencia %} <span class="badge bg-light text-muted">Ref: {{ m.referencia }}</span>{% endif %}</td>
+                            <td>{{ m.usuario }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Este producto aún no tiene movimientos.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-table mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                <span class="fw-bold"><i class="fas fa-clipboard-check me-2"></i>Conteos del producto</span>
+                <span class="badge bg-light" style="color:#d81b60;">{{ conteos|length }} conteo(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Stock sistema</th>
+                            <th>Stock real</th>
+                            <th>Diferencia</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cid, c in conteos %}
+                        <tr>
+                            <td class="fw-bold" style="color:#d81b60;">{{ cid }}</td>
+                            <td>{{ c.fecha }}</td>
+                            <td>{{ '%g'|format(c.stock_sistema|float) }}</td>
+                            <td class="fw-bold">{{ '%g'|format(c.stock_real|float) }}</td>
+                            <td>
+                                {% if c.diferencia > 0 %}
+                                    <span class="badge badge-entrada"><i class="fas fa-arrow-down me-1"></i>+{{ '%g'|format(c.diferencia|float) }}</span>
+                                {% elif c.diferencia < 0 %}
+                                    <span class="badge badge-salida"><i class="fas fa-arrow-up me-1"></i>{{ '%g'|format(c.diferencia|float) }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Sin cambio</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ c.motivo }}</td>
+                            <td>{{ c.usuario }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-clipboard-check fa-2x mb-2 d-block"></i>Este producto aún no tiene conteos.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

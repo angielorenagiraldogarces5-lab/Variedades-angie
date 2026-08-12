@@ -1,0 +1,68 @@
+{
+    "1": {
+        "id": "1",
+        "pid": "1",
+        "producto": "TERMOS",
+        "stock_sistema": 5.0,
+        "stock_real": 5.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LIYANI"
+    },
+    "2": {
+        "id": "2",
+        "pid": "2",
+        "producto": "MATE LISTOS",
+        "stock_sistema": 4.0,
+        "stock_real": 4.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LIYANI"
+    },
+    "3": {
+        "id": "3",
+        "pid": "3",
+        "producto": "SECADORES DE PELO",
+        "stock_sistema": 12.0,
+        "stock_real": 12.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LIYANI"
+    },
+    "4": {
+        "id": "4",
+        "pid": "4",
+        "producto": "CAMARAS DE SEGURIDAD",
+        "stock_sistema": 5.0,
+        "stock_real": 5.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LIYANI"
+    },
+    "5": {
+        "id": "5",
+        "pid": "6",
+        "producto": "LONCHERAS",
+        "stock_sistema": 2.0,
+        "stock_real": 2.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LORENA"
+    },
+    "6": {
+        "id": "6",
+        "pid": "1",
+        "producto": "TERMOS",
+        "stock_sistema": 6.0,
+        "stock_real": 6.0,
+        "diferencia": 0.0,
+        "motivo": "conteo de cierre",
+        "fecha": "2026-08-12",
+        "usuario": "LORENA"
+    }
+}
