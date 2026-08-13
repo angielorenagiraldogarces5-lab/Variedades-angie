@@ -1,20 +1,14 @@
 {
     "admin": {
-        "password": "scrypt:32768:8:1$g1A0e1FlUdIOjATS$18224a0cf611f2191aca17e4cdaf9b490d7f476169f70976e0a7b33efebfc100d901d96a5377d08f7b36f0c7640cb2e4fd070aa93041f9fc7bfe14c915024d5a",
+        "password": "scrypt:32768:8:1$9qeRbhscepX49yOB$f72efbe3a89cb0948e593ff48b21a3bb0d73a15af6527f70a66885f97d2898cba0a16d5fb3a8ce6ea0296bda40ad2cc72492aa10a8362d2623a0e7628df01091",
         "nombre": "LIYANI",
-        "rol": "Admin",
+        "rol": "Dueño",
         "comision": 0.0
     },
-    "LORENA": {
-        "password": "scrypt:32768:8:1$QjuJqNiqA7DsU2YN$1aaa11c0643d729a093b6489278d76902d0a78fc50d4298e037f7a4703fb7320a7ec17c8c53e70904e926c676879c19cddcb3441c8579c01211988b874d067cb",
-        "nombre": "LORENA",
+    "Angie": {
+        "password": "scrypt:32768:8:1$RZQCHo4BaMiceEmT$a3d840915687f7fd43b98a211e9850ea82056b17ee5e9d860c8856ce764104332c0eb9c2f8643e8db19a633347e73166677cd3702424f264ed37743bdb844f33",
+        "nombre": "Angie",
         "rol": "Admin",
         "comision": 0.0
-    },
-    "COCO": {
-        "password": "scrypt:32768:8:1$a4tqcoN8YNF5vtty$f52ea82c47a77e3fe0dec5aec5ca5acba738607c1c43ac4eee2edddb51c3d87307567b9656aa41a694e422bf606b237b64622f502755c331090b0197a0df028a",
-        "nombre": "COCO",
-        "rol": "Trabajador",
-        "comision": 15.0
     }
 }

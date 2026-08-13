@@ -1,1 +1,20 @@
-{}
+{
+    "CJ-0006": {
+        "numero": "CJ-0006",
+        "fecha": "2026-08-13",
+        "apertura": "2026-08-13 10:39",
+        "cierre": null,
+        "cajero": "LIYANI",
+        "monto_inicial": 1000.0,
+        "movimientos": [],
+        "total_ingresos": 0.0,
+        "total_egresos": 0.0,
+        "total_esperado": 1000.0,
+        "monto_contado": null,
+        "diferencia": 0.0,
+        "estado": "Abierta",
+        "observacion": "",
+        "observacion_cierre": "",
+        "cerrado_por": ""
+    }
+}
