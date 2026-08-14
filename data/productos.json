@@ -1,1 +1,211 @@
-{}
+{
+    "1": {
+        "nombre": "TERMOS",
+        "categoria": "ARTICULOS DE COSINA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 5.0,
+        "stock_fisico": 5.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "2": {
+        "nombre": "Mate listos",
+        "categoria": "ARTICULOS DE COSINA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 4.0,
+        "stock_fisico": 4.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "3": {
+        "nombre": "Secadores de pelo Lenovo",
+        "categoria": "ARTICULOS DE BELLEZA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 12.0,
+        "stock_fisico": 12.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "4": {
+        "nombre": "Convertidor enchufes",
+        "categoria": "TECNOLOGIA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 1.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "5": {
+        "nombre": "Tarros de cafe",
+        "categoria": "ARTICULOS DE COSINA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 2.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "6": {
+        "nombre": "Refractarias colegiales plásticas",
+        "categoria": "Artículos colegiales",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 2.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "7": {
+        "nombre": "Planchas para niñas",
+        "categoria": "BELLEZA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 9.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "8": {
+        "nombre": "Galón térmico",
+        "categoria": "TECNOLOGIA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 1.0,
+        "stock_fisico": 0.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "9": {
+        "nombre": "Quita pelusa",
+        "categoria": "ARTICULOS DE HOGAR",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 1.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "10": {
+        "nombre": "Audifonos",
+        "categoria": "TECNOLÒGIA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 12.0,
+        "stock_fisico": 12.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "11": {
+        "nombre": "Porta  cubos  de  hielo",
+        "categoria": "ARTICULOS DE COSINA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 3.0,
+        "stock_fisico": 3.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "12": {
+        "nombre": "Licuadora Portátil",
+        "categoria": "ARTICULOS DE COSINA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 1.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "13": {
+        "nombre": "Secadores pequeños",
+        "categoria": "BELLEZA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 2.0,
+        "stock_fisico": 2.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "14": {
+        "nombre": "Planchas de pelo",
+        "categoria": "BELLEZA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 3.0,
+        "stock_fisico": 3.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "15": {
+        "nombre": "Mini prime",
+        "categoria": "Articulos de cosina",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 3.0,
+        "stock_fisico": 3.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "16": {
+        "nombre": "BATIDORA",
+        "categoria": "Articulos de cosina",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 1.0,
+        "stock_fisico": 1.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "17": {
+        "nombre": "Cepillos alisadores",
+        "categoria": "BELLEZA",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 5.0,
+        "stock_fisico": 5.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "18": {
+        "nombre": "Botellas escolares económicas",
+        "categoria": "ARTICULOS COLEGIALES",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 6.0,
+        "stock_fisico": 6.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    },
+    "19": {
+        "nombre": "Botellas escolares Batilo",
+        "categoria": "ARTICULOS COLEGIALES",
+        "codigo": null,
+        "precio": 0.0,
+        "costo": 0.0,
+        "stock": 5.0,
+        "stock_fisico": 3.0,
+        "stock_minimo": 1.0,
+        "control_stock": true
+    }
+}

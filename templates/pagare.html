@@ -147,7 +147,7 @@
                     <td class="label">DEUDOR</td>
                     <td>
                         <b>{{ pagare.cliente.nombre }}</b><br>
-                        DNI/RUC: {{ pagare.cliente.documento or '—' }}<br>
+                        DNI/CUIT: {{ pagare.cliente.documento or '—' }}<br>
                         Teléfono: {{ pagare.cliente.telefono|tf or '—' }}<br>
                         Domicilio: {{ pagare.cliente.direccion or '—' }}
                     </td>
@@ -156,7 +156,7 @@
                     <td class="label">ACREEDOR / BENEFICIARIO</td>
                     <td>
                         <b>{{ pagare.acreedor.nombre or '—' }}</b><br>
-                        DNI/RUC: {{ pagare.acreedor.documento or '—' }}<br>
+                        DNI/CUIT: {{ pagare.acreedor.documento or '—' }}<br>
                         Teléfono: {{ pagare.acreedor.telefono|tf or '—' }}<br>
                         Domicilio: {{ pagare.acreedor.direccion or '—' }}
                     </td>
