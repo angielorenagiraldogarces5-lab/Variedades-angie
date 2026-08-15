@@ -143,6 +143,7 @@
 
         <div class="no-print text-center mt-4 pb-4">
             <form method="POST" action="/notas-credito/{{ nota.numero }}/estado" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <select name="estado" class="form-select d-inline-block w-auto me-2">
                     <option value="Pendiente" {% if nota.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
                     <option value="Aplicada" {% if nota.estado == 'Aplicada' %}selected{% endif %}>Aplicada</option>

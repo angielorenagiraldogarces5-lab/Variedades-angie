@@ -60,6 +60,7 @@
         {% endwith %}
 
         <form method="POST" action="/compras/crear" class="card card-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="card-header py-3 px-4">
                 <i class="fas fa-file-invoice me-2"></i>Datos de la compra
             </div>

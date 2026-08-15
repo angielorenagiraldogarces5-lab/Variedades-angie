@@ -165,6 +165,7 @@ def ver(numero):
     return render_template(
         "pagare.html",
         pagare=pagare,
+        moneda=pagares_store.MONEDA,
         fecha_hoy=ahora().strftime("%Y-%m-%d"),
     )
 

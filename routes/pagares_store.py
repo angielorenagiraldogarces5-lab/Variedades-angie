@@ -8,7 +8,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 DATA_FILE = os.path.join(DATA_DIR, "pagares.json")
 
 PREFIJO = "PAG"
-MONEDA = "SOLES"
+MONEDA = "PESOS ARGENTINOS"
 ESTADOS = ("Vigente", "Pagado", "Cancelado")
 
 MESES = (
@@ -136,7 +136,8 @@ def monto_en_letras(monto):
         texto = "un"
     elif texto.startswith("uno "):
         texto = "un" + texto[3:]
-    return f"{texto} con {centavos:02d}/100"
+    pesos = "peso" if entero == 1 else "pesos"
+    return f"{texto} {pesos} con {centavos:02d}/100"
 
 
 def crear_pagare(

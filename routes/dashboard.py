@@ -36,6 +36,15 @@ def dashboard():
                 </div>
             </a>
         </div>
+        <div class="col-md-4">
+            <a href="/auditoria" class="text-decoration-none">
+                <div class="card card-module p-4 text-center border-secondary">
+                    <i class="fas fa-clipboard-list text-secondary fa-3x mb-3"></i>
+                    <h5 class="fw-bold text-dark">Auditoría de Accesos</h5>
+                    <p class="text-muted small">Quién entró al sistema y cuándo. Solo administradores.</p>
+                </div>
+            </a>
+        </div>
         """
 
     return render_template(

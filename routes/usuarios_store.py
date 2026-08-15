@@ -3,6 +3,8 @@ import os
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from routes.security_store import validar_password
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 DATA_FILE = os.path.join(DATA_DIR, "usuarios.json")
 
@@ -58,6 +60,9 @@ def crear_usuario(username, password, nombre, rol, comision=0.0):
     usuarios = load_usuarios()
     if username in usuarios:
         return False, "El nombre de usuario ya existe."
+    ok, msg = validar_password(password)
+    if not ok:
+        return False, msg
     usuarios[username] = {
         "password": generate_password_hash(password),
         "nombre": nombre,
@@ -73,6 +78,9 @@ def actualizar_usuario(username, password=None, nombre=None, rol=None, comision=
     if username not in usuarios:
         return False, "El usuario no existe."
     if password:
+        ok, msg = validar_password(password)
+        if not ok:
+            return False, msg
         usuarios[username]["password"] = generate_password_hash(password)
     if nombre:
         usuarios[username]["nombre"] = nombre
@@ -82,6 +90,30 @@ def actualizar_usuario(username, password=None, nombre=None, rol=None, comision=
         usuarios[username]["comision"] = _normalizar_comision(comision)
     save_usuarios(usuarios)
     return True, f"Usuario '{username}' actualizado correctamente."
+
+
+def cambiar_password(username, actual, nueva):
+    usuarios = load_usuarios()
+    usuario = usuarios.get(username)
+    if not usuario:
+        return False, "El usuario no existe."
+    if not check_password_hash(usuario.get("password", ""), actual):
+        return False, "La contraseña actual es incorrecta."
+    ok, msg = validar_password(nueva)
+    if not ok:
+        return False, msg
+    usuario["password"] = generate_password_hash(nueva)
+    save_usuarios(usuarios)
+    return True, "Contraseña actualizada correctamente."
+
+
+def es_contrasena_inicial(username):
+    """Devuelve True si el usuario todavía usa la contraseña por defecto '1234'."""
+    usuarios = load_usuarios()
+    usuario = usuarios.get(username)
+    if not usuario:
+        return False
+    return check_password_hash(usuario.get("password", ""), "1234")
 
 
 def eliminar_usuario(username):

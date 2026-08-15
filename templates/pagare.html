@@ -89,15 +89,18 @@
                 </span>
                 {% if pagare.estado == 'Vigente' %}
                 <form method="POST" action="/pagares/{{ pagare.numero }}/estado">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="estado" value="Pagado">
                     <button class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i>Marcar Pagado</button>
                 </form>
                 <form method="POST" action="/pagares/{{ pagare.numero }}/estado">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="estado" value="Cancelado">
                     <button class="btn btn-outline-danger btn-sm"><i class="fas fa-times me-1"></i>Cancelar</button>
                 </form>
                 {% elif pagare.estado == 'Cancelado' %}
                 <form method="POST" action="/pagares/{{ pagare.numero }}/estado">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="estado" value="Vigente">
                     <button class="btn btn-outline-primary btn-sm"><i class="fas fa-undo me-1"></i>Reactivar</button>
                 </form>
@@ -105,6 +108,7 @@
                 {% if session.get('rol') in ['Admin', 'Dueño'] %}
                 <form method="POST" action="/pagares/{{ pagare.numero }}/eliminar"
                       onsubmit="return confirm('¿Eliminar el pagaré {{ pagare.numero }}?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Eliminar</button>
                 </form>
                 {% endif %}
@@ -132,7 +136,7 @@
                 o en el domicilio que se señale, la cantidad de:
             </div>
 
-            <div class="monto-line">{{ pagare.monto|money }}</div>
+            <div class="monto-line">{{ pagare.monto|money }} <span style="font-size:13px; letter-spacing:2px;">· {{ moneda }}</span></div>
             <div class="monto-letras">({{ pagare.monto_letras }})</div>
 
             <div class="doc-text">
@@ -163,7 +167,7 @@
                 </tr>
                 <tr>
                     <td class="label">MONTO</td>
-                    <td>{{ pagare.monto|money }}</td>
+                    <td>{{ pagare.monto|money }} · {{ moneda }}</td>
                 </tr>
                 <tr>
                     <td class="label">INTERÉS</td>

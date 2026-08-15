@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from routes import facturas_store, fiados_store
@@ -8,6 +10,75 @@ bp = Blueprint("fiados", __name__)
 
 def _logueado():
     return session.get("logged_in")
+
+
+def _parsear_fecha(valor):
+    try:
+        return date.fromisoformat(valor or "")
+    except (TypeError, ValueError):
+        return None
+
+
+def _alertas_vencimiento(fiados, dias_proximas=7):
+    hoy = date.today()
+    vencidas, proximas = [], []
+    for numero, f in fiados.items():
+        if f.get("estado") == "Pagado":
+            continue
+        cliente = f.get("cliente", {}).get("nombre", "Sin nombre")
+        for c in f.get("cuotas", []):
+            if c.get("estado") == "Pagada":
+                continue
+            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
+            if not fecha_limite:
+                continue
+            saldo_cuota = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
+            dias = (fecha_limite - hoy).days
+            if dias < 0:
+                vencidas.append({
+                    "fiado": numero,
+                    "cuota": c.get("n"),
+                    "cliente": cliente,
+                    "monto": saldo_cuota,
+                    "fecha_limite": c.get("fecha_limite"),
+                    "dias": -dias,
+                })
+            elif dias <= dias_proximas:
+                proximas.append({
+                    "fiado": numero,
+                    "cuota": c.get("n"),
+                    "cliente": cliente,
+                    "monto": saldo_cuota,
+                    "fecha_limite": c.get("fecha_limite"),
+                    "dias": dias,
+                })
+    vencidas.sort(key=lambda a: a["dias"], reverse=True)
+    proximas.sort(key=lambda a: a["dias"])
+    return vencidas, proximas
+
+
+def _resumen_por_cliente(fiados):
+    resumen = {}
+    for f in fiados.values():
+        nombre = f.get("cliente", {}).get("nombre", "Sin nombre")
+        r = resumen.setdefault(
+            nombre,
+            {"nombre": nombre, "fiados": 0, "total": 0.0, "saldo": 0.0, "cuotas_pendientes": 0},
+        )
+        r["fiados"] += 1
+        r["total"] = round(r["total"] + float(f.get("total", 0)), 2)
+        r["saldo"] = round(r["saldo"] + float(f.get("saldo_pendiente", 0)), 2)
+        for c in f.get("cuotas", []):
+            if c.get("estado") != "Pagada":
+                r["cuotas_pendientes"] += 1
+    return sorted(resumen.values(), key=lambda r: r["saldo"], reverse=True)
+
+
+def _fiados_recientes(fiados, cantidad=6):
+    ordenados = sorted(
+        fiados.items(), key=lambda kv: _parsear_fecha(kv[1].get("fecha")) or date.min, reverse=True
+    )
+    return ordenados[:cantidad]
 
 
 def _fiados_existentes():
@@ -22,9 +93,15 @@ def _fiados_existentes():
 def listar():
     if not _logueado():
         return redirect(url_for("login.login"))
+    fiados = fiados_store.load_fiados()
+    vencidas, proximas = _alertas_vencimiento(fiados)
     return render_template(
         "fiados.html",
-        fiados=fiados_store.load_fiados(),
+        fiados=fiados,
+        vencidas=vencidas,
+        proximas=proximas,
+        recientes=_fiados_recientes(fiados),
+        resumen_clientes=_resumen_por_cliente(fiados),
         rol=session.get("rol"),
     )
 

@@ -1,5 +1,8 @@
 __pycache__/
 *.pyc
+.secret_key
+data/intentos.json
+data/auditoria.json
 app-android/node_modules/
 app-android/.expo/
 app-android/.git/

@@ -112,6 +112,7 @@
                                         <i class="fas fa-pen"></i> Editar
                                     </button>
                                     <form method="POST" action="/usuarios/eliminar/{{ username }}" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar al usuario \'{{ username }}\'?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button class="btn btn-sm btn-danger-soft"><i class="fas fa-trash"></i> Eliminar</button>
                                     </form>
                                 {% endif %}
@@ -132,6 +133,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="/usuarios/crear">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Usuario</label>
@@ -144,6 +146,7 @@
                         <div class="mb-3">
                             <label class="form-label">Contraseña</label>
                             <input type="password" name="password" class="form-control" placeholder="Ingrese una contraseña" required>
+                            <div class="form-text">Mínimo 8 caracteres, con letras y números.</div>
                         </div>
                         <div class="mb-1">
                             <label class="form-label">Rol</label>
@@ -176,6 +179,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formEditar" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Usuario</label>

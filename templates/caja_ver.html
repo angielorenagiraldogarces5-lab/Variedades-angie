@@ -80,6 +80,7 @@
             </div>
             {% if session.get('rol') in ['Admin', 'Dueño'] %}
             <form method="POST" action="/caja/{{ caja.numero }}/reabrir" onsubmit="return confirm('¿Reabrir la caja {{ caja.numero }}? Podrás corregir movimientos y volver a cerrarla.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="btn btn-light px-4 py-2 fw-bold"><i class="fas fa-unlock me-2"></i>Reabrir caja</button>
             </form>
             {% endif %}
@@ -142,6 +143,7 @@
                 <div class="card card-form p-4 h-100">
                     <h5 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-exchange-alt me-2"></i>Registrar movimiento</h5>
                     <form method="POST" action="/caja/{{ caja.numero }}/movimiento">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label fw-bold">Tipo de movimiento</label>
@@ -184,6 +186,7 @@
                     <h5 class="fw-bold mb-3" style="color:#c2185b;"><i class="fas fa-lock me-2"></i>Cierre de caja</h5>
                     <p class="small text-muted">Al cerrar, registra el dinero físico contado. El sistema calcula automáticamente si hay sobrante o faltante.</p>
                     <form method="POST" action="/caja/{{ caja.numero }}/cierre" onsubmit="return confirm('¿Confirmas el cierre de la caja {{ caja.numero }}?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Monto contado en caja</label>
                             <div class="input-group">
@@ -244,6 +247,7 @@
                             <td class="text-end">
                                 <form method="POST" action="/caja/{{ caja.numero }}/movimiento/{{ m.n }}/eliminar" class="d-inline"
                                       onsubmit="return confirm('¿Eliminar este movimiento?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn btn-sm btn-danger-soft"><i class="fas fa-trash"></i></button>
                                 </form>
                             </td>

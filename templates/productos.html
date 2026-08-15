@@ -126,6 +126,7 @@
                                 </button>
                                 <form method="POST" action="/productos/eliminar/{{ pid }}" class="d-inline"
                                       onsubmit="return confirm('¿Estás seguro de eliminar \'{{ p.nombre }}\'?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn btn-sm btn-danger-soft"><i class="fas fa-trash"></i></button>
                                 </form>
                             </td>
@@ -151,6 +152,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="/productos/crear">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nombre *</label>
@@ -210,6 +212,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formEditar" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Nombre *</label>

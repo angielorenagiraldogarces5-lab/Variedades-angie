@@ -86,6 +86,7 @@
 
         {% if factura %}
         <form method="POST" action="/notas-credito/crear" class="card card-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="factura_numero" value="{{ factura.numero }}">
             <div class="card-header py-3 px-4">
                 <i class="fas fa-box-open me-2"></i>2. Ítems a devolver · {{ factura.numero }}

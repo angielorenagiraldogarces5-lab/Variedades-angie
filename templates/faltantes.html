@@ -125,6 +125,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="/faltantes/config" class="row g-2 align-items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col-md-8">
                         <label class="form-label mb-1">Números (separados por coma)</label>
                         <input type="text" name="numeros" class="form-control" value="{{ config.get('numeros', '') }}" placeholder="Ej. 3624 123456, 3624 654321">

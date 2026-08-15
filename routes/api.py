@@ -7,6 +7,7 @@ from routes import (
     facturas_store,
     inventario_store,
     productos_store,
+    security_store,
     usuarios_store,
 )
 from utils import ahora, formatear_moneda, hoy
@@ -68,9 +69,52 @@ def login():
     datos = request.get_json(silent=True) or {}
     username = str(datos.get("username", "")).strip()
     password = str(datos.get("password", ""))
+    ip = request.remote_addr or ""
+
+    bloqueado, minutos = security_store.esta_bloqueado(username)
+    if bloqueado:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        f"Cuenta bloqueada temporalmente por intentos fallidos. "
+                        f"Intentá de nuevo en {minutos} min."
+                    ),
+                }
+            ),
+            429,
+        )
+
     usuario = usuarios_store.verificar_usuario(username, password)
     if not usuario:
+        bloqueado, minutos = security_store.registrar_intento_fallido(username, ip)
+        security_store.registrar_evento(
+            "login_fallido", username, "API: usuario o contraseña incorrectos", ip
+        )
+        if bloqueado:
+            security_store.registrar_evento(
+                "bloqueo",
+                username,
+                f"API: cuenta bloqueada por {security_store.BLOQUEO_MINUTOS} min",
+                ip,
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": (
+                            f"Demasiados intentos fallidos. Cuenta bloqueada "
+                            f"temporalmente. Intentá de nuevo en {minutos} min."
+                        ),
+                    }
+                ),
+                429,
+            )
         return jsonify({"ok": False, "error": "Usuario o contraseña incorrectos."}), 401
+
+    security_store.limpiar_intentos(username)
+    security_store.registrar_evento("login", username, "API: acceso correcto", ip)
     return jsonify(
         {
             "ok": True,
@@ -171,6 +215,9 @@ def dashboard():
 
 @bp.route("/categorias")
 def categorias():
+    usuario = _requiere_auth()
+    if not usuario:
+        return jsonify({"ok": False, "error": "No autorizado."}), 401
     grupos = productos_store.agrupar_por_categoria()
     return jsonify(
         {

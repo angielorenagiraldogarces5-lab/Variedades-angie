@@ -146,6 +146,7 @@
                                 {% if session.get('rol') in ['Admin', 'Dueño'] %}
                                 <form method="POST" action="/pagares/{{ numero }}/eliminar" class="d-inline"
                                       onsubmit="return confirm('¿Estás seguro de eliminar el pagaré {{ numero }}?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn btn-sm btn-danger-soft"><i class="fas fa-trash"></i></button>
                                 </form>
                                 {% endif %}
