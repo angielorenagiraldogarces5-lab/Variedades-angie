@@ -45,6 +45,32 @@ def cambiar_contrasena():
     )
 
 
+@bp.route("/bloqueos")
+def bloqueos():
+    if not _es_admin():
+        return redirect(url_for("login.login"))
+    bloqueados = security_store.listar_bloqueados()
+    return render_template("bloqueos.html", bloqueados=bloqueados)
+
+
+@bp.route("/desbloquear/<username>", methods=["POST"])
+def desbloquear(username):
+    if not _es_admin():
+        return redirect(url_for("login.login"))
+    ok = security_store.desbloquear_usuario(username)
+    if ok:
+        security_store.registrar_evento(
+            "desbloqueo",
+            session.get("username"),
+            f"Desbloqueó la cuenta de '{username}'",
+            request.remote_addr or "",
+        )
+        flash(f"La cuenta '{username}' fue desbloqueada correctamente.", "success")
+    else:
+        flash(f"La cuenta '{username}' no está bloqueada.", "warning")
+    return redirect(url_for("seguridad.bloqueos"))
+
+
 @bp.route("/auditoria")
 def auditoria():
     if not _es_admin():

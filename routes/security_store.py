@@ -88,6 +88,31 @@ def limpiar_intentos(username):
     _guardar_json(INTENTOS_FILE, intentos)
 
 
+def listar_bloqueados():
+    """Devuelve las cuentas actualmente bloqueadas con los minutos restantes."""
+    intentos = _load_intentos()
+    bloqueados = []
+    for clave in intentos:
+        bloqueado, minutos = _bloqueo_actual(clave)
+        if bloqueado:
+            bloqueados.append({"usuario": clave, "minutos": minutos})
+    bloqueados.sort(key=lambda b: b["usuario"].lower())
+    return bloqueados
+
+
+def desbloquear_usuario(username):
+    """Quita el bloqueo de una cuenta. Devuelve True si estaba bloqueada."""
+    clave = (username or "").lower()
+    if not clave:
+        return False
+    intentos = _load_intentos()
+    if clave not in intentos:
+        return False
+    del intentos[clave]
+    _guardar_json(INTENTOS_FILE, intentos)
+    return True
+
+
 # ---------------------------------------------------------------
 # Auditoría de eventos de seguridad
 # ---------------------------------------------------------------

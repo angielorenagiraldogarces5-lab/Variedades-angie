@@ -45,6 +45,15 @@ def dashboard():
                 </div>
             </a>
         </div>
+        <div class="col-md-4">
+            <a href="/bloqueos" class="text-decoration-none">
+                <div class="card card-module p-4 text-center border-warning">
+                    <i class="fas fa-user-lock text-warning fa-3x mb-3"></i>
+                    <h5 class="fw-bold text-dark">Cuentas Bloqueadas</h5>
+                    <p class="text-muted small">Desbloqueá cuentas temporalmente bloqueadas. Solo administradores.</p>
+                </div>
+            </a>
+        </div>
         """
 
     return render_template(

@@ -17,6 +17,7 @@
         .badge-tipo-cambio { background: #fff4e5; color: #b26a00; border: 1px solid #ffc46b; }
         .badge-tipo-logout { background: #e8eaf6; color: #1d4ed8; border: 1px solid #b3c2ff; }
         .badge-tipo-bloqueo { background: #fdecea; color: #c62828; border: 1px solid #ffab91; }
+        .badge-tipo-desbloqueo { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed957; }
         .page-title { color: #d81b60; font-weight: 800; }
         .page-subtitle { color: #d9a5c0; }
         .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
@@ -67,6 +68,8 @@
                                     <span class="badge badge-tipo-fallo"><i class="fas fa-exclamation-circle me-1"></i>Intento fallido</span>
                                 {% elif e.tipo == 'bloqueo' %}
                                     <span class="badge badge-tipo-bloqueo"><i class="fas fa-lock me-1"></i>Bloqueo</span>
+                                {% elif e.tipo == 'desbloqueo' %}
+                                    <span class="badge badge-tipo-desbloqueo"><i class="fas fa-unlock me-1"></i>Desbloqueo</span>
                                 {% elif e.tipo == 'cambio_password' %}
                                     <span class="badge badge-tipo-cambio"><i class="fas fa-key me-1"></i>Cambio de contraseña</span>
                                 {% elif e.tipo == 'logout' %}
