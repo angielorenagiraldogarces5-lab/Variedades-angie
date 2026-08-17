@@ -89,11 +89,38 @@ def _fiados_existentes():
     }
 
 
+def _anos_disponibles(fiados):
+    anos = set()
+    for f in fiados.values():
+        fecha = _parsear_fecha(f.get("fecha"))
+        if fecha:
+            anos.add(fecha.year)
+    return sorted(anos, reverse=True)
+
+
+def _filtrar_por_anio(fiados, anio):
+    if not anio:
+        return fiados
+    resultado = {}
+    for numero, f in fiados.items():
+        fecha = _parsear_fecha(f.get("fecha"))
+        if fecha and fecha.year == anio:
+            resultado[numero] = f
+    return resultado
+
+
 @bp.route("/fiados")
 def listar():
     if not _logueado():
         return redirect(url_for("login.login"))
-    fiados = fiados_store.load_fiados()
+    fiados_todos = fiados_store.load_fiados()
+    anio_filtro = request.args.get("anio", "").strip()
+    try:
+        anio_filtro = int(anio_filtro) if anio_filtro else None
+    except ValueError:
+        anio_filtro = None
+    fiados = _filtrar_por_anio(fiados_todos, anio_filtro)
+    anos_disponibles = _anos_disponibles(fiados_todos)
     vencidas, proximas = _alertas_vencimiento(fiados)
     return render_template(
         "fiados.html",
@@ -103,6 +130,8 @@ def listar():
         recientes=_fiados_recientes(fiados),
         resumen_clientes=_resumen_por_cliente(fiados),
         rol=session.get("rol"),
+        anio_filtro=anio_filtro,
+        anos_disponibles=anos_disponibles,
     )
 
 
@@ -182,6 +211,40 @@ def ver(numero):
         "fiado.html",
         fiado=fiado,
         factura=factura,
+        fecha_hoy=ahora().strftime("%Y-%m-%d"),
+    )
+
+
+@bp.route("/fiados/<numero>/tarjeta")
+def tarjeta(numero):
+    if not _logueado():
+        return redirect(url_for("login.login"))
+    fiado = fiados_store.load_fiados().get(numero)
+    if not fiado:
+        flash("El fiado no existe.", "danger")
+        return redirect(url_for("fiados.listar"))
+    dias_semana = {
+        0: "Lunes", 1: "Martes", 2: "Miércoles", 3: "Jueves",
+        4: "Viernes", 5: "Sábado", 6: "Domingo",
+    }
+    frecuencia = fiado.get("frecuencia", "Semanal")
+    fecha_inicio = _parsear_fecha(fiado.get("fecha_inicio"))
+    if fecha_inicio and frecuencia == "Semanal":
+        dia_pago = dias_semana.get(fecha_inicio.weekday(), "—")
+        dias_pago = f"Todo {dia_pago}"
+    elif fecha_inicio and frecuencia == "Quincenal":
+        dia = fecha_inicio.day
+        dias_pago = f"Días {dia} y {dia + 15 if dia + 15 <= 28 else dia - 15} de cada mes"
+    elif fecha_inicio and frecuencia == "Mensual":
+        dia = fecha_inicio.day
+        dias_pago = f"Día {dia} de cada mes"
+    else:
+        dias_pago = "Según calendario"
+    return render_template(
+        "tarjeta_cobro.html",
+        fiado=fiado,
+        ciudad="Mendoza",
+        dias_pago=dias_pago,
         fecha_hoy=ahora().strftime("%Y-%m-%d"),
     )
 

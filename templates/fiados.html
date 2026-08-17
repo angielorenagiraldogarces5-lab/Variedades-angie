@@ -54,9 +54,11 @@
                 <h2 class="page-title mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Fiado Digital</h2>
                 <p class="page-subtitle mb-0">El cliente lleva el producto y abona poco a poco en cuotas.</p>
             </div>
-            <a href="/fiados/nuevo" class="btn btn-pink px-4 py-2">
-                <i class="fas fa-plus me-2"></i>Nuevo Fiado
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/fiados/nuevo" class="btn btn-pink px-4 py-2">
+                    <i class="fas fa-plus me-2"></i>Nuevo Fiado
+                </a>
+            </div>
         </div>
 
         {% set total_fiados = fiados|length %}
@@ -105,6 +107,18 @@
             {% endif %}
         {% endwith %}
 
+        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+            <span class="section-title me-2"><i class="fas fa-calendar-alt me-2"></i>Filtrar por año:</span>
+            <a href="/fiados" class="btn btn-sm {% if not anio_filtro %}btn-pink{% else %}btn-outline-purple{% endif %} px-3">
+                Todos
+            </a>
+            {% for anio in anos_disponibles %}
+            <a href="/fiados?anio={{ anio }}" class="btn btn-sm {% if anio_filtro == anio %}btn-pink{% else %}btn-outline-purple{% endif %} px-3">
+                {{ anio }}
+            </a>
+            {% endfor %}
+        </div>
+
         <div class="d-flex align-items-center gap-2 mb-3">
             <span class="section-title"><i class="fas fa-bell me-2"></i>Alertas de vencimiento</span>
         </div>
@@ -119,7 +133,7 @@
                         <ul class="list-unstyled small mb-0">
                             {% for a in vencidas[:5] %}
                             <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                <a href="/fiados/{{ a.fiado }}" class="text-decoration-none" style="color:#c2185b;">
+                                <a href="/fiados/{{ a.fiado }}/tarjeta" class="text-decoration-none" style="color:#c2185b;" target="_blank">
                                     <b>{{ a.fiado }}</b>
                                 </a>
                                 <span class="text-muted">{{ a.cliente }} · Cuota {{ a.cuota }}</span>
@@ -142,7 +156,7 @@
                         <ul class="list-unstyled small mb-0">
                             {% for a in proximas[:5] %}
                             <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                <a href="/fiados/{{ a.fiado }}" class="text-decoration-none" style="color:#b26a00;">
+                                <a href="/fiados/{{ a.fiado }}/tarjeta" class="text-decoration-none" style="color:#b26a00;" target="_blank">
                                     <b>{{ a.fiado }}</b>
                                 </a>
                                 <span class="text-muted">{{ a.cliente }} · Cuota {{ a.cuota }}</span>
@@ -163,7 +177,7 @@
         <div class="row g-3 mb-4">
             {% for numero, f in recientes %}
             <div class="col-6 col-md-4 col-lg-2">
-                <a href="/fiados/{{ numero }}" class="text-decoration-none">
+                <a href="/fiados/{{ numero }}/tarjeta" class="text-decoration-none" target="_blank">
                     <div class="card fiado-card p-3 h-100">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="fw-bold" style="color:#d81b60;"><i class="fas fa-hand-holding-usd me-1"></i>{{ numero }}</span>
@@ -261,6 +275,9 @@
                             <td class="text-end">
                                 <a href="/fiados/{{ numero }}" class="btn btn-sm btn-outline-purple">
                                     <i class="fas fa-eye"></i> Ver
+                                </a>
+                                <a href="/fiados/{{ numero }}/tarjeta" class="btn btn-sm btn-outline-purple" target="_blank">
+                                    <i class="fas fa-credit-card"></i>
                                 </a>
                                 {% if session.get('rol') in ['Admin', 'Dueño'] %}
                                 <form method="POST" action="/fiados/{{ numero }}/eliminar" class="d-inline"
