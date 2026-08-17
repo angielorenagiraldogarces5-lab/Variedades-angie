@@ -101,7 +101,7 @@
                         <td>{{ item.descripcion }}</td>
                         <td class="text-center">{{ '%.2f'|format(item.cantidad) }}</td>
                         <td class="text-end">{{ item.costo|money }}</td>
-                        <td class="text-end">{{ item.subtotal|money }}</td>
+                        <td class="text-end">{{ (item.cantidad * item.costo)|money }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

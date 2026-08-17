@@ -1,0 +1,37 @@
+[
+    {
+        "cliente_nombre": "Rita Viviana Oviedo",
+        "cliente_documento": "",
+        "cliente_telefono": "",
+        "cliente_direccion": "Una casa antes F/05",
+        "ciudad": "La Tebaida",
+        "articulo": "6 sillas",
+        "total": 430000,
+        "fecha_venta": "2026-08-07",
+        "frecuencia": "Quincenal",
+        "n_cuotas": 6,
+        "vendedor": "",
+        "abonos": [
+            {"fecha": "2026-08-13", "monto": 50000},
+            {"fecha": "2026-08-18", "monto": 50000}
+        ],
+        "senia": 180000
+    },
+    {
+        "cliente_nombre": "NOMBRE DEL CLIENTE",
+        "cliente_documento": "",
+        "cliente_telefono": "",
+        "cliente_direccion": "DIRECCIÓN",
+        "ciudad": "CIUDAD",
+        "articulo": "DESCRIPCIÓN DEL ARTÍCULO",
+        "total": 0,
+        "fecha_venta": "AAAA-MM-DD",
+        "frecuencia": "Quincenal",
+        "n_cuotas": 6,
+        "vendedor": "",
+        "abonos": [
+            {"fecha": "AAAA-MM-DD", "monto": 0}
+        ],
+        "senia": 0
+    }
+]

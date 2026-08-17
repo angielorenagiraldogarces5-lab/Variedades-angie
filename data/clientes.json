@@ -1,1 +1,41 @@
-{}
+{
+    "1": {
+        "nombre": "Rita Viviana Oviedo",
+        "documento": "",
+        "telefono": "",
+        "direccion": "Una casa antes F/05",
+        "limite_credito": 430000.0,
+        "credito_usado": 0.0,
+        "moroso": false,
+        "score_historial": 50,
+        "total_fiados": 0,
+        "fiados_pagados": 0,
+        "fiados_con_mora": 0
+    },
+    "2": {
+        "nombre": "Test Cliente 2",
+        "documento": "",
+        "telefono": "",
+        "direccion": "",
+        "limite_credito": 1000.0,
+        "credito_usado": 0.0,
+        "moroso": false,
+        "score_historial": 50,
+        "total_fiados": 0,
+        "fiados_pagados": 0,
+        "fiados_con_mora": 0
+    },
+    "3": {
+        "nombre": "Cliente Test Import",
+        "documento": "",
+        "telefono": "",
+        "direccion": "",
+        "limite_credito": 50000.0,
+        "credito_usado": 0.0,
+        "moroso": false,
+        "score_historial": 50,
+        "total_fiados": 0,
+        "fiados_pagados": 0,
+        "fiados_con_mora": 0
+    }
+}

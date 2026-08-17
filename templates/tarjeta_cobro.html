@@ -355,7 +355,7 @@
                 <div class="producto-fila">
                     <span class="producto-nombre">{{ item.descripcion }}</span>
                     <span class="producto-cant">x{{ '%.0f'|format(item.cantidad) }}</span>
-                    <span class="producto-precio">{{ item.subtotal|money }}</span>
+                    <span class="producto-precio">{{ (item.cantidad * item.precio)|money }}</span>
                 </div>
                 {% endfor %}
 

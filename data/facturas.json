@@ -1,1 +1,104 @@
-{}
+{
+    "F-0003": {
+        "numero": "F-0003",
+        "tipo": "Factura",
+        "fecha": "2026-08-07",
+        "cliente": {
+            "nombre": "Rita Viviana Oviedo",
+            "documento": "",
+            "telefono": "",
+            "direccion": "Una casa antes F/05",
+            "limite_credito": 430000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "6 sillas",
+                "cantidad": 1,
+                "precio": 430000.0
+            }
+        ],
+        "subtotal": 430000.0,
+        "total": 430000.0,
+        "forma_pago": "Fiado",
+        "estado": "Pagada",
+        "observacion": "Importado manual - La Tebaida",
+        "vendedor": "",
+        "vendedor_username": "",
+        "comision_pct": 0.0,
+        "comision_monto": 0.0
+    },
+    "F-0004": {
+        "numero": "F-0004",
+        "tipo": "Factura",
+        "fecha": "2026-08-17",
+        "cliente": {
+            "nombre": "Test Cliente 2",
+            "documento": "",
+            "telefono": "",
+            "direccion": "",
+            "limite_credito": 1000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "Sillas",
+                "cantidad": 1,
+                "precio": 1000.0
+            }
+        ],
+        "subtotal": 1000.0,
+        "total": 1000.0,
+        "forma_pago": "Fiado",
+        "estado": "Pagada",
+        "observacion": "Importado manual",
+        "vendedor": "",
+        "vendedor_username": "",
+        "comision_pct": 0.0,
+        "comision_monto": 0.0
+    },
+    "F-0005": {
+        "numero": "F-0005",
+        "tipo": "Factura",
+        "fecha": "2026-08-17",
+        "cliente": {
+            "nombre": "Cliente Test Import",
+            "documento": "",
+            "telefono": "",
+            "direccion": "",
+            "limite_credito": 50000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "Mesa de madera",
+                "cantidad": 1,
+                "precio": 50000.0
+            }
+        ],
+        "subtotal": 50000.0,
+        "total": 50000.0,
+        "forma_pago": "Fiado",
+        "estado": "Pagada",
+        "observacion": "Importado manual - Mendoza",
+        "vendedor": "Angie",
+        "vendedor_username": "",
+        "comision_pct": 0.0,
+        "comision_monto": 0.0
+    }
+}

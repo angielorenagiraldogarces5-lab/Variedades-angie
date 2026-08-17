@@ -1,1 +1,420 @@
-{}
+{
+    "FID-0004": {
+        "numero": "FID-0004",
+        "fecha": "2026-08-07",
+        "factura_origen": "F-0003",
+        "cliente": {
+            "nombre": "Rita Viviana Oviedo",
+            "documento": "",
+            "telefono": "",
+            "direccion": "Una casa antes F/05",
+            "limite_credito": 430000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "6 sillas",
+                "cantidad": 1,
+                "precio": 430000.0
+            }
+        ],
+        "total": 430000.0,
+        "n_cuotas": 6,
+        "frecuencia": "Quincenal",
+        "fecha_inicio": "2026-08-07",
+        "cuotas": [
+            {
+                "n": 1,
+                "monto": 71666.67,
+                "monto_abonado": 71666.67,
+                "fecha_limite": "2026-08-22",
+                "fecha_pago": "2026-08-07",
+                "estado": "Pagada"
+            },
+            {
+                "n": 2,
+                "monto": 71666.67,
+                "monto_abonado": 71666.67,
+                "fecha_limite": "2026-09-06",
+                "fecha_pago": "2026-08-07",
+                "estado": "Pagada"
+            },
+            {
+                "n": 3,
+                "monto": 71666.67,
+                "monto_abonado": 71666.67,
+                "fecha_limite": "2026-09-21",
+                "fecha_pago": "2026-08-13",
+                "estado": "Pagada"
+            },
+            {
+                "n": 4,
+                "monto": 71666.67,
+                "monto_abonado": 64999.99,
+                "fecha_limite": "2026-10-06",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 5,
+                "monto": 71666.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-21",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 6,
+                "monto": 71666.65,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-11-05",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            }
+        ],
+        "fechas_ruta": [
+            {
+                "fecha": "2026-08-22",
+                "cuota_n": 1,
+                "monto": 71666.67,
+                "cobrado": true,
+                "fecha_cobro_real": "2026-08-07"
+            },
+            {
+                "fecha": "2026-09-06",
+                "cuota_n": 2,
+                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-09-21",
+                "cuota_n": 3,
+                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-06",
+                "cuota_n": 4,
+                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-21",
+                "cuota_n": 5,
+                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-05",
+                "cuota_n": 6,
+                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            }
+        ],
+        "abonos": [
+            {
+                "n": 1,
+                "fecha": "2026-08-07",
+                "monto": 180000.0,
+                "registrado_por": "Sistema"
+            },
+            {
+                "n": 2,
+                "fecha": "2026-08-13",
+                "monto": 50000.0,
+                "registrado_por": "Sistema"
+            },
+            {
+                "n": 3,
+                "fecha": "2026-08-18",
+                "monto": 50000.0,
+                "registrado_por": "Sistema"
+            }
+        ],
+        "total_pagado": 280000.0,
+        "saldo_pendiente": 150000.0,
+        "estado": "Pendiente",
+        "vendedor": "",
+        "aprobacion_estado": "Aprobado",
+        "aprobacion_score": 0,
+        "aprobacion_razon": "Importado de registro manual",
+        "reestructurado_de": null,
+        "pago_inicial": 0.0
+    },
+    "FID-0005": {
+        "numero": "FID-0005",
+        "fecha": "2026-08-17",
+        "factura_origen": "F-0004",
+        "cliente": {
+            "nombre": "Test Cliente 2",
+            "documento": "",
+            "telefono": "",
+            "direccion": "",
+            "limite_credito": 1000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "Sillas",
+                "cantidad": 1,
+                "precio": 1000.0
+            }
+        ],
+        "total": 1000.0,
+        "n_cuotas": 6,
+        "frecuencia": "Quincenal",
+        "fecha_inicio": "2026-08-17",
+        "cuotas": [
+            {
+                "n": 1,
+                "monto": 166.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-09-01",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 2,
+                "monto": 166.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-09-16",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 3,
+                "monto": 166.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-01",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 4,
+                "monto": 166.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-16",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 5,
+                "monto": 166.67,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-31",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 6,
+                "monto": 166.65,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-11-15",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            }
+        ],
+        "fechas_ruta": [
+            {
+                "fecha": "2026-09-01",
+                "cuota_n": 1,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-09-16",
+                "cuota_n": 2,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-01",
+                "cuota_n": 3,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-16",
+                "cuota_n": 4,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-31",
+                "cuota_n": 5,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-15",
+                "cuota_n": 6,
+                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            }
+        ],
+        "abonos": [],
+        "total_pagado": 0.0,
+        "saldo_pendiente": 1000.0,
+        "estado": "Pendiente",
+        "vendedor": "",
+        "aprobacion_estado": "Aprobado",
+        "aprobacion_score": 0,
+        "aprobacion_razon": "Importado de registro manual",
+        "reestructurado_de": null,
+        "pago_inicial": 0.0
+    },
+    "FID-0006": {
+        "numero": "FID-0006",
+        "fecha": "2026-08-17",
+        "factura_origen": "F-0005",
+        "cliente": {
+            "nombre": "Cliente Test Import",
+            "documento": "",
+            "telefono": "",
+            "direccion": "",
+            "limite_credito": 50000.0,
+            "credito_usado": 0.0,
+            "moroso": false,
+            "score_historial": 50,
+            "total_fiados": 0,
+            "fiados_pagados": 0,
+            "fiados_con_mora": 0
+        },
+        "items": [
+            {
+                "descripcion": "Mesa de madera",
+                "cantidad": 1,
+                "precio": 50000.0
+            }
+        ],
+        "total": 50000.0,
+        "n_cuotas": 6,
+        "frecuencia": "Quincenal",
+        "fecha_inicio": "2026-08-17",
+        "cuotas": [
+            {
+                "n": 1,
+                "monto": 8333.33,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-09-01",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 2,
+                "monto": 8333.33,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-09-16",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 3,
+                "monto": 8333.33,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-01",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 4,
+                "monto": 8333.33,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-16",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 5,
+                "monto": 8333.33,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-10-31",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            },
+            {
+                "n": 6,
+                "monto": 8333.35,
+                "monto_abonado": 0.0,
+                "fecha_limite": "2026-11-15",
+                "fecha_pago": null,
+                "estado": "Pendiente"
+            }
+        ],
+        "fechas_ruta": [
+            {
+                "fecha": "2026-09-01",
+                "cuota_n": 1,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-09-16",
+                "cuota_n": 2,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-01",
+                "cuota_n": 3,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-16",
+                "cuota_n": 4,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-10-31",
+                "cuota_n": 5,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-15",
+                "cuota_n": 6,
+                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            }
+        ],
+        "abonos": [],
+        "total_pagado": 0.0,
+        "saldo_pendiente": 50000.0,
+        "estado": "Pendiente",
+        "vendedor": "Angie",
+        "aprobacion_estado": "Aprobado",
+        "aprobacion_score": 0,
+        "aprobacion_razon": "Importado de registro manual",
+        "reestructurado_de": null,
+        "pago_inicial": 0.0
+    }
+}
