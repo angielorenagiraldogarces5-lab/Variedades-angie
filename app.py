@@ -64,6 +64,7 @@ from routes import (
     proveedores,
     reposicion,
     seguridad,
+    tarjetas,
     tienda,
     users,
 )
@@ -88,6 +89,7 @@ app.register_blueprint(pagares.bp)
 app.register_blueprint(compras.bp)
 app.register_blueprint(api.bp)
 app.register_blueprint(tienda.bp)
+app.register_blueprint(tarjetas.bp)
 app.register_blueprint(seguridad.bp)
 
 # La API se autentica con tokens Bearer, no con cookies: queda exenta de CSRF.

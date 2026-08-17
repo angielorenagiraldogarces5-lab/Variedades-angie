@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjetas de Cobro - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(216, 27, 96, 0.18); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .badge-pagada { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; }
+        .badge-pendiente { background: #fff4e5; color: #b26a00; border: 1px solid #ffc566; }
+        .section-title { color: #d81b60; font-weight: 700; font-size: 1.3rem; }
+
+        .tarjeta-mini {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.14);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+        }
+        .tarjeta-mini:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(216, 27, 96, 0.28);
+            color: inherit;
+            text-decoration: none;
+        }
+        .tarjeta-mini-header {
+            background: linear-gradient(135deg, #d81b60 0%, #ff6bb3 100%);
+            color: #fff;
+            padding: 14px 16px 12px;
+            position: relative;
+        }
+        .tarjeta-mini-header::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: #fff;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+        .tarjeta-mini-num {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .tarjeta-mini-badge {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .tarjeta-mini-body {
+            padding: 16px 16px 14px;
+        }
+        .tarjeta-mini-cliente {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tarjeta-mini-fecha {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .tarjeta-mini-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .tarjeta-mini-label { color: #888; }
+        .tarjeta-mini-valor { font-weight: 700; }
+        .tarjeta-mini-total { color: #d81b60; }
+        .tarjeta-mini-saldo { color: #b26a00; }
+        .tarjeta-mini-pagado { color: #2e7d32; }
+        .tarjeta-mini-footer {
+            background: #fdf0f5;
+            padding: 8px 16px;
+            font-size: 11px;
+            color: #999;
+            border-top: 1px solid #ffe3ef;
+            text-align: center;
+        }
+
+        .anio-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 28px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #ffd6e8;
+        }
+        .anio-num {
+            font-size: 36px;
+            font-weight: 900;
+            color: #d81b60;
+            line-height: 1;
+        }
+        .anio-count {
+            font-size: 13px;
+            color: #999;
+        }
+        .anio-line {
+            flex: 1;
+            height: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-credit-card me-2"></i>Tarjetas de Cobro</h2>
+                <p class="page-subtitle mb-0">Todas las tarjetas organizadas por año.</p>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-credit-card"></i></div>
+                    <div>
+                        <div class="text-muted small">Total tarjetas</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_fiados }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Total fiado</div>
+                        <div class="fw-bold fs-4" style="color:#2e7d32;">{{ total_monto|money }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="text-muted small">Pendiente cobro</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ total_pendiente|money }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+            <span class="section-title me-2"><i class="fas fa-calendar-alt me-2"></i>Filtrar por año:</span>
+            <a href="/tarjetas" class="btn btn-sm {% if not anio_filtro %}btn-pink{% else %}btn-outline-purple{% endif %} px-3">
+                Todos
+            </a>
+            {% for anio in anos_disponibles %}
+            <a href="/tarjetas?anio={{ anio }}" class="btn btn-sm {% if anio_filtro == anio %}btn-pink{% else %}btn-outline-purple{% endif %} px-3">
+                {{ anio }}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% for anio, fiados_grupo in grupos.items() %}
+        <div class="anio-header">
+            <div class="anio-num">{{ anio }}</div>
+            <div class="anio-count">{{ fiados_grupo|length }} tarjeta{{ 's' if fiados_grupo|length != 1 }}</div>
+            <div class="anio-line"></div>
+        </div>
+        <div class="row g-3 mb-3">
+            {% for numero, f in fiados_grupo %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="/fiados/{{ numero }}/tarjeta" class="tarjeta-mini" target="_blank">
+                    <div class="tarjeta-mini-header">
+                        <div class="tarjeta-mini-num">{{ numero }}</div>
+                        {% if f.estado == 'Pagado' %}
+                            <span class="tarjeta-mini-badge badge-pagada"><i class="fas fa-check"></i> Pagado</span>
+                        {% else %}
+                            <span class="tarjeta-mini-badge badge-pendiente"><i class="fas fa-clock"></i> Pendiente</span>
+                        {% endif %}
+                    </div>
+                    <div class="tarjeta-mini-body">
+                        <div class="tarjeta-mini-cliente"><i class="fas fa-user me-1"></i>{{ f.cliente.nombre }}</div>
+                        <div class="tarjeta-mini-fecha"><i class="fas fa-calendar me-1"></i>{{ f.fecha }} · {{ f.frecuencia }}</div>
+                        <div class="tarjeta-mini-row">
+                            <span class="tarjeta-mini-label">Total</span>
+                            <span class="tarjeta-mini-valor tarjeta-mini-total">{{ f.total|money }}</span>
+                        </div>
+                        <div class="tarjeta-mini-row">
+                            <span class="tarjeta-mini-label">Abonado</span>
+                            <span class="tarjeta-mini-valor tarjeta-mini-pagado">{{ f.total_pagado|money }}</span>
+                        </div>
+                        <div class="tarjeta-mini-row">
+                            <span class="tarjeta-mini-label">Saldo</span>
+                            <span class="tarjeta-mini-valor tarjeta-mini-saldo">{{ f.saldo_pendiente|money }}</span>
+                        </div>
+                    </div>
+                    <div class="tarjeta-mini-footer">
+                        {{ f.n_cuotas }} cuota{{ 's' if f.n_cuotas != 1 }} · <i class="fas fa-print me-1"></i>Ver tarjeta
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-credit-card fa-3x mb-3 d-block" style="color:#ffd6e8;"></i>
+            <p class="fs-5">No hay tarjetas de cobro registradas.</p>
+            <a href="/fiados/nuevo" class="btn btn-pink px-4 py-2">
+                <i class="fas fa-plus me-2"></i>Crear primer fiado
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
