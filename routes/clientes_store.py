@@ -23,7 +23,7 @@ def _next_id(clientes):
     return str(max(ids) + 1) if ids else "1"
 
 
-def crear_cliente(nombre, documento, telefono, direccion):
+def crear_cliente(nombre, documento, telefono, direccion, limite_credito=0):
     clientes = load_clientes()
     cid = _next_id(clientes)
     clientes[cid] = {
@@ -31,6 +31,13 @@ def crear_cliente(nombre, documento, telefono, direccion):
         "documento": documento,
         "telefono": telefono,
         "direccion": direccion,
+        "limite_credito": float(limite_credito),
+        "credito_usado": 0.0,
+        "moroso": False,
+        "score_historial": 50,
+        "total_fiados": 0,
+        "fiados_pagados": 0,
+        "fiados_con_mora": 0,
     }
     save_clientes(clientes)
     return True, cid
@@ -41,15 +48,23 @@ def buscar_cliente(cid):
     return clientes.get(str(cid))
 
 
-def actualizar_cliente(cid, nombre, documento, telefono, direccion):
+def actualizar_cliente(cid, nombre, documento, telefono, direccion, limite_credito=None):
     clientes = load_clientes()
     if str(cid) not in clientes:
         return False, "El cliente no existe."
+    existente = clientes[str(cid)]
     clientes[str(cid)] = {
         "nombre": nombre,
         "documento": documento,
         "telefono": telefono,
         "direccion": direccion,
+        "limite_credito": float(limite_credito) if limite_credito is not None else existente.get("limite_credito", 0),
+        "credito_usado": existente.get("credito_usado", 0.0),
+        "moroso": existente.get("moroso", False),
+        "score_historial": existente.get("score_historial", 50),
+        "total_fiados": existente.get("total_fiados", 0),
+        "fiados_pagados": existente.get("fiados_pagados", 0),
+        "fiados_con_mora": existente.get("fiados_con_mora", 0),
     }
     save_clientes(clientes)
     return True, "Cliente actualizado correctamente."

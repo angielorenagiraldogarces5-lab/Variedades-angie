@@ -25,6 +25,14 @@
         .factura-info { background: #fff6fa; border: 1px solid #ffe3ef; border-radius: 12px; padding: 14px; }
         .sel-table thead th { background: #ff6bb3; color: #fff; border: none; font-size: 13px; }
         .total-box { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); color: #fff; border-radius: 14px; }
+        .scoring-box { border: 2px solid #ffd6e8; border-radius: 16px; padding: 20px; background: #fff; }
+        .scoring-aprobado { border-color: #2e7d32; background: #f3fdf3; }
+        .scoring-rechazado { border-color: #c2185b; background: #fff0f2; }
+        .scoring-pendiente { border-color: #e6a700; background: #fff9ec; }
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; color: #fff; }
+        .preview-fechas { background: #fff9fc; border: 1px solid #ffe3ef; border-radius: 12px; padding: 14px; max-height: 200px; overflow-y: auto; }
+        .preview-fecha-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ffe3ef; font-size: 13px; }
+        .preview-fecha-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -84,6 +92,62 @@
         </div>
 
         {% if factura %}
+        {% if scoring %}
+        {% set apr = scoring.estado|default('Pendiente', true) %}
+        <div class="scoring-box mb-4 scoring-{{ apr|lower }}">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="score-circle" style="background:{% if apr == 'Aprobado' %}#2e7d32{% elif apr == 'Rechazado' %}#c2185b{% else %}#e6a700{% endif %};">
+                    {{ scoring.score }}
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="fw-bold mb-1" style="color:{% if apr == 'Aprobado' %}#2e7d32{% elif apr == 'Rechazado' %}#c2185b{% else %}#e6a700{% endif %};">
+                        {% if apr == 'Aprobado' %}
+                            <i class="fas fa-check-circle me-2"></i>Crédito Aprobado
+                        {% elif apr == 'Rechazado' %}
+                            <i class="fas fa-times-circle me-2"></i>Crédito Rechazado
+                        {% else %}
+                            <i class="fas fa-clock me-2"></i>Requiere Revisión
+                        {% endif %}
+                    </h5>
+                    <p class="mb-2 small">{{ scoring.razon }}</p>
+                    {% if not scoring.credito_ok %}
+                        <div class="alert alert-danger py-2 px-3 small mb-0">
+                            <i class="fas fa-exclamation-triangle me-1"></i>{{ scoring.credito_msg }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    <div class="small text-muted">Límite de crédito</div>
+                    <div class="fw-bold" style="color:#d81b60;">
+                        {% if scoring.saldo_total is defined %}
+                            ${{ '{:,.0f}'.format(scoring.saldo_total) }} usado
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if scoring.detalle %}
+            <div class="mt-3">
+                <div class="small fw-bold mb-2" style="color:#d81b60;">Detalle del análisis:</div>
+                {% for tipo, texto, puntos in scoring.detalle %}
+                <div class="d-flex align-items-center gap-2 small mb-1">
+                    {% if tipo == 'Positivo' %}
+                        <i class="fas fa-check-circle" style="color:#2e7d32;"></i>
+                    {% elif tipo == 'Negativo' %}
+                        <i class="fas fa-times-circle" style="color:#c2185b;"></i>
+                    {% else %}
+                        <i class="fas fa-minus-circle" style="color:#888;"></i>
+                    {% endif %}
+                    <span>{{ texto }}</span>
+                    <span class="fw-bold ms-auto" style="color:{% if tipo == 'Positivo' %}#2e7d32{% elif tipo == 'Negativo' %}#c2185b{% else %}#888{% endif %};">{{ puntos }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <form method="POST" action="/fiados/crear" class="card card-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="factura_numero" value="{{ factura.numero }}">
@@ -130,15 +194,15 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Fecha de inicio de cuotas</label>
-                        <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_hoy }}" required>
+                        <input type="date" name="fecha_inicio" id="fechaInicio" class="form-control" value="{{ fecha_hoy }}" required oninput="actualizarPreview()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Número de cuotas</label>
-                        <input type="number" name="n_cuotas" id="nCuotas" class="form-control" min="1" value="4" oninput="actualizarCuota()">
+                        <input type="number" name="n_cuotas" id="nCuotas" class="form-control" min="1" value="4" oninput="actualizarCuota(); actualizarPreview();">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Frecuencia</label>
-                        <select name="frecuencia" class="form-select" id="frecuencia">
+                        <select name="frecuencia" class="form-select" id="frecuencia" onchange="actualizarCuota(); actualizarPreview();">
                             {% for f in frecuencias %}
                             <option value="{{ f }}">{{ f }}</option>
                             {% endfor %}
@@ -146,15 +210,31 @@
                     </div>
                 </div>
 
-                <div class="total-box p-4 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="small text-white-50">TOTAL A FINANCIAR · {{ factura.total|money }} </div>
-                        <div class="small text-white-50">CUOTA APROXIMADA</div>
-                        <div class="fw-bold fs-3" id="cuotaDisplay">{{ 0|money }}</div>
+                <div id="previewFechas" class="preview-fechas mb-4" style="display:none;">
+                    <div class="small fw-bold mb-2" style="color:#d81b60;"><i class="fas fa-calendar-alt me-1"></i>Vista previa de cuotas:</div>
+                    <div id="previewLista"></div>
+                    <div class="mt-2 small fw-bold" style="color:#d81b60;" id="previewResumen"></div>
+                </div>
+
+                <div class="total-box p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-white-50">TOTAL A FINANCIAR · {{ factura.total|money }} </div>
+                            <div class="small text-white-50">CUOTA APROXIMADA</div>
+                            <div class="fw-bold fs-3" id="cuotaDisplay">{{ 0|money }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-light fw-bold px-4 py-2" style="color:#d81b60;">
+                            <i class="fas fa-check me-2"></i>Crear Fiado
+                        </button>
                     </div>
-                    <button type="submit" class="btn btn-light fw-bold px-4 py-2" style="color:#d81b60;">
-                        <i class="fas fa-check me-2"></i>Crear Fiado
-                    </button>
+                    {% if scoring and scoring.estado == 'Rechazado' and scoring.credito_ok %}
+                    <div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.3);">
+                        <label class="form-check-label small text-white">
+                            <input type="checkbox" name="override_aprobacion" value="si" class="form-check-input">
+                            Forzar aprobación (solo Admin/Dueño)
+                        </label>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </form>
@@ -164,7 +244,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/formato.js"></script>
     <script>
-        var totalFiado = {{ factura.total }};
+        var totalFiado = {{ factura.total if factura else 0 }};
 
         function actualizarCuota() {
             var n = parseInt(document.getElementById('nCuotas').value) || 1;
@@ -172,7 +252,69 @@
             document.getElementById('cuotaDisplay').textContent = formatearMoneda(cuota);
         }
 
+        function sumarDias(fecha, dias) {
+            var result = new Date(fecha);
+            result.setDate(result.getDate() + dias);
+            return result;
+        }
+
+        function sumarMeses(fecha, meses) {
+            var result = new Date(fecha);
+            result.setMonth(result.getMonth() + meses);
+            var dia = fecha.getDate();
+            var ultimoDia = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+            result.setDate(Math.min(dia, ultimoDia));
+            return result;
+        }
+
+        function formatearFecha(fecha) {
+            var d = fecha.getDate().toString().padStart(2, '0');
+            var m = (fecha.getMonth() + 1).toString().padStart(2, '0');
+            var y = fecha.getFullYear();
+            return d + '/' + m + '/' + y;
+        }
+
+        function actualizarPreview() {
+            var n = parseInt(document.getElementById('nCuotas').value) || 1;
+            var frecuencia = document.getElementById('frecuencia').value;
+            var fechaInicio = document.getElementById('fechaInicio').value;
+            var previewDiv = document.getElementById('previewFechas');
+            var listaDiv = document.getElementById('previewLista');
+            var resumenDiv = document.getElementById('previewResumen');
+
+            if (!fechaInicio) { previewDiv.style.display = 'none'; return; }
+
+            var inicio = new Date(fechaInicio + 'T00:00:00');
+            var base = totalFiado / n;
+            var html = '';
+
+            for (var i = 1; i <= Math.min(n, 8); i++) {
+                var fecha;
+                if (frecuencia === 'Mensual') {
+                    fecha = sumarMeses(inicio, i);
+                } else if (frecuencia === 'Quincenal') {
+                    fecha = sumarDias(inicio, 15 * i);
+                } else {
+                    fecha = sumarDias(inicio, 7 * i);
+                }
+                html += '<div class="preview-fecha-item">' +
+                    '<span>Cuota ' + i + '</span>' +
+                    '<span>' + formatearFecha(fecha) + '</span>' +
+                    '<span class="fw-bold" style="color:#d81b60;">$' + formatearMoneda(base) + '</span>' +
+                    '</div>';
+            }
+            if (n > 8) {
+                html += '<div class="text-muted small text-center py-1">... y ' + (n - 8) + ' cuotas más</div>';
+            }
+            listaDiv.innerHTML = html;
+            resumenDiv.textContent = n + ' cuotas de $' + formatearMoneda(base) + ' · Total: $' + formatearMoneda(totalFiado);
+            previewDiv.style.display = 'block';
+        }
+
         actualizarCuota();
+        if (document.getElementById('fechaInicio').value) {
+            actualizarPreview();
+        }
     </script>
 </body>
 </html>

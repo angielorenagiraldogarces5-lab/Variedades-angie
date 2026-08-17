@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruta de Cobro - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .btn-whatsapp { background: #25d366; border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-whatsapp:hover { background: #1da851; color: #fff; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(216, 27, 96, 0.18); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .ruta-card { border: none; border-radius: 16px; box-shadow: 0 6px 18px rgba(216, 27, 96, 0.12); margin-bottom: 12px; border-left: 5px solid #ff6bb3; }
+        .ruta-card.vencida { border-left-color: #c2185b; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff; }
+            .ruta-card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+            .stat-card { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center no-print">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/cobranzas" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-route me-2"></i>Ruta de Cobro</h2>
+                <p class="page-subtitle mb-0">{{ nombre_dia }} {{ fecha.strftime('%d/%m/%Y') }}</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <a href="/ruta-cobro?fecha={{ fecha_anterior }}" class="btn btn-outline-purple btn-sm">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="/ruta-cobro" class="btn btn-pink btn-sm"><i class="fas fa-calendar-day me-1"></i>Hoy</a>
+                <a href="/ruta-cobro?fecha={{ fecha_siguiente }}" class="btn btn-outline-purple btn-sm">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-purple btn-sm">
+                    <i class="fas fa-print me-1"></i>Imprimir
+                </button>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-users"></i></div>
+                    <div>
+                        <div class="text-muted small">Clientes a visitar</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_clientes }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Total a cobrar</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ total_ruta|money }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-calendar"></i></div>
+                    <div>
+                        <div class="text-muted small">Fecha</div>
+                        <div class="fw-bold fs-5" style="color:#2e7d32;">{{ fecha.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for r in ruta %}
+        <div class="card ruta-card {% if r.vencida %}vencida{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="fw-bold fs-5" style="color:#d81b60;">{{ loop.index }}. {{ r.cliente }}</span>
+                            {% if r.vencida %}
+                                <span class="badge" style="background:#c2185b; color:#fff;">Vencida</span>
+                            {% endif %}
+                        </div>
+                        {% if r.direccion %}
+                        <div class="small text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i>{{ r.direccion }}</div>
+                        {% endif %}
+                        {% if r.telefono %}
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-phone me-1"></i>{{ r.telefono|tf }}
+                        </div>
+                        {% endif %}
+                        <div class="d-flex align-items-center gap-3 mt-2">
+                            <span class="small fw-bold" style="color:#d81b60;">
+                                <i class="fas fa-hand-holding-usd me-1"></i>FID{{ r.fiado[-4:] }} · Cuota {{ r.cuota }}/{{ r.total_cuotas }}
+                            </span>
+                            <span class="small text-muted">{{ r.frecuencia }}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-4 mb-2" style="color:#c2185b;">{{ r.monto|money }}</div>
+                        {% if r.telefono_wa %}
+                        <a href="https://wa.me/{{ r.telefono_wa }}?text={{ 'Hola, te recordamos que tu cuota N°%s de $%s vence hoy. ¡No te olvides de abonar! Variedades Angie.'|format(r.cuota, '{:,.0f}'.format(r.monto))|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp">
+                            <i class="fab fa-whatsapp me-1"></i>Recordar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not ruta %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x mb-3 d-block" style="color:#e9fbe9;"></i>
+            <p class="fs-5 text-muted">No hay cobros programados para este día.</p>
+            <a href="/cobranzas" class="btn btn-pink px-4 py-2"><i class="fas fa-calendar-check me-2"></i>Ver calendario</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

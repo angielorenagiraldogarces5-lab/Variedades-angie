@@ -49,6 +49,7 @@ from routes import (
     caja,
     categorias,
     clientes,
+    cobranzas,
     comisiones,
     compras,
     dashboard,
@@ -62,7 +63,9 @@ from routes import (
     pagares,
     productos,
     proveedores,
+    recordatorios,
     reposicion,
+    ruta_cobro,
     seguridad,
     tarjetas,
     tienda,
@@ -90,7 +93,10 @@ app.register_blueprint(compras.bp)
 app.register_blueprint(api.bp)
 app.register_blueprint(tienda.bp)
 app.register_blueprint(tarjetas.bp)
+app.register_blueprint(cobranzas.bp)
 app.register_blueprint(seguridad.bp)
+app.register_blueprint(recordatorios.bp)
+app.register_blueprint(ruta_cobro.bp)
 
 # La API se autentica con tokens Bearer, no con cookies: queda exenta de CSRF.
 csrf.exempt(api.bp)

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Cobranzas - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(216, 27, 96, 0.18); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .section-title { color: #d81b60; font-weight: 700; font-size: 1.3rem; }
+
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        .cal-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: #d81b60;
+            padding: 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .cal-dia {
+            background: #fff;
+            border-radius: 12px;
+            min-height: 110px;
+            padding: 8px;
+            box-shadow: 0 3px 10px rgba(216, 27, 96, 0.08);
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+        }
+        .cal-dia:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(216, 27, 96, 0.18);
+        }
+        .cal-dia.vacio {
+            background: transparent;
+            box-shadow: none;
+            min-height: 0;
+        }
+        .cal-dia.hoy {
+            border: 3px solid #d81b60;
+            background: #fff5f8;
+        }
+        .cal-dia.tiene-cobros {
+            background: #fff9ec;
+            border-left: 4px solid #ff6bb3;
+        }
+        .cal-num {
+            font-weight: 800;
+            font-size: 18px;
+            color: #333;
+        }
+        .cal-dia.hoy .cal-num {
+            color: #d81b60;
+            background: #ffd6e8;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cal-badge {
+            display: inline-block;
+            background: #d81b60;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 1px 7px;
+            margin-left: 6px;
+        }
+        .cal-cobro {
+            background: linear-gradient(135deg, #ffe5ec, #fff0f5);
+            border-radius: 8px;
+            padding: 5px 8px;
+            margin-top: 5px;
+            font-size: 11px;
+            border-left: 3px solid #ff6bb3;
+        }
+        .cal-cobro.vencida {
+            background: linear-gradient(135deg, #ffe0e0, #fff0f0);
+            border-left-color: #c2185b;
+        }
+        .cal-cobro.hoy-cobro {
+            background: linear-gradient(135deg, #e9fbe9, #f0fdf0);
+            border-left-color: #2e7d32;
+        }
+        .cal-cobro-cliente {
+            font-weight: 700;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cal-cobro-monto {
+            font-weight: 800;
+            color: #d81b60;
+        }
+        .cal-cobro-vencida .cal-cobro-monto {
+            color: #c2185b;
+        }
+        .cal-cobro-info {
+            color: #888;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #555;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .resumen-dia {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.1);
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .resumen-dia-fecha {
+            font-weight: 800;
+            color: #d81b60;
+            font-size: 15px;
+        }
+        .resumen-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #ffe5ec;
+            font-size: 13px;
+        }
+        .resumen-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-calendar-check me-2"></i>Calendario de Cobranzas</h2>
+                <p class="page-subtitle mb-0">Sabé exactamente a quién cobrar y cuándo.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/ruta-cobro" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-route me-2"></i>Ruta de Cobro
+                </a>
+                <a href="/recordatorios" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-bell me-2"></i>Recordatorios
+                </a>
+                <a href="/reporte-deuda" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-chart-bar me-2"></i>Deuda Envejecida
+                </a>
+                <a href="/morosos" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-user-slash me-2"></i>Morosos
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-calendar-day"></i></div>
+                    <div>
+                        <div class="text-muted small">Operaciones este mes</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_operaciones }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Total a cobrar</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ total_cobrar|money }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-check-circle"></i></div>
+                    <div>
+                        <div class="text-muted small">Hoy es</div>
+                        <div class="fw-bold fs-6" style="color:#2e7d32;">{{ hoy.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <a href="/cobranzas?anio={{ mes == 1 and anio - 1 or anio }}&mes={{ mes == 1 and 12 or mes - 1 }}" class="btn btn-outline-purple btn-sm">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h4 class="fw-bold mb-0" style="color:#d81b60; min-width: 200px; text-align:center;">
+                    {{ nombre_mes }} {{ anio }}
+                </h4>
+                <a href="/cobranzas?anio={{ mes == 12 and anio + 1 or anio }}&mes={{ mes == 12 and 1 or mes + 1 }}" class="btn btn-outline-purple btn-sm">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/cobranzas" class="btn btn-sm {% if mes == hoy.month and anio == hoy.year %}btn-pink{% else %}btn-outline-purple{% endif %}">
+                    <i class="fas fa-calendar-day me-1"></i>Hoy
+                </a>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="legend-item"><div class="legend-dot" style="background:#ffd6e8; border:2px solid #d81b60;"></div> Hoy</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fff9ec; border-left:4px solid #ff6bb3;"></div> Con cobros</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffe0e0; border-left:4px solid #c2185b;"></div> Vencidas</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e9fbe9; border-left:4px solid #2e7d32;"></div> Cobrar hoy</div>
+        </div>
+
+        <div class="calendario-grid mb-4">
+            <div class="cal-header">Lun</div>
+            <div class="cal-header">Mar</div>
+            <div class="cal-header">Mié</div>
+            <div class="cal-header">Jue</div>
+            <div class="cal-header">Vie</div>
+            <div class="cal-header">Sáb</div>
+            <div class="cal-header">Dom</div>
+
+            {% for dia in celdas %}
+                {% if dia is none %}
+                    <div class="cal-dia vacio"></div>
+                {% else %}
+                    {% set tiene = dia in cobros %}
+                    {% set es_hoy = (anio == hoy.year and mes == hoy.month and dia == hoy.day) %}
+                    <div class="cal-dia {{ 'hoy' if es_hoy else '' }} {{ 'tiene-cobros' if tiene and not es_hoy else '' }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="cal-num">{{ dia }}</span>
+                            {% if tiene %}
+                                <span class="cal-badge">{{ cobros[dia]|length }}</span>
+                            {% endif %}
+                        </div>
+                        {% if tiene %}
+                            {% for item in cobros[dia] %}
+                            <div class="cal-cobro {{ 'cal-cobro-vencida' if item.vencida else '' }} {{ 'hoy-cobro' if item.hoy else '' }}">
+                                <div class="cal-cobro-cliente">{{ item.cliente }}</div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="cal-cobro-monto">{{ item.monto|money }}</span>
+                                    <span class="cal-cobro-info">FID{{ item.fiado[-4:] }} C{{ item.cuota }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if cobros %}
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="section-title"><i class="fas fa-list-ul me-2"></i>Resumen del mes</span>
+        </div>
+        <div class="row g-3 mb-4">
+            {% for dia_num in cobros.keys()|sort %}
+            {% set fecha_obj = hoy.replace(day=dia_num) if dia_num <= 28 else hoy %}
+            <div class="col-md-6 col-lg-4">
+                <div class="resumen-dia">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="resumen-dia-fecha"><i class="fas fa-calendar-day me-1"></i>{{ dia_num }} de {{ nombre_mes }}</span>
+                        <span class="badge" style="background:#d81b60;">{{ cobros[dia_num]|length }}</span>
+                    </div>
+                    {% for item in cobros[dia_num] %}
+                    <div class="resumen-item {{ 'text-danger' if item.vencida else '' }}">
+                        <div>
+                            <span class="fw-bold">{{ item.cliente }}</span>
+                            <span class="text-muted ms-1">· FID{{ item.fiado[-4:] }} · Cuota {{ item.cuota }}</span>
+                            {% if item.vencida %}<span class="badge bg-danger ms-1">Vencida</span>{% endif %}
+                            {% if item.hoy %}<span class="badge bg-success ms-1">¡Hoy!</span>{% endif %}
+                        </div>
+                        <span class="fw-bold" style="color:#d81b60;">{{ item.monto|money }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-check fa-3x mb-3 d-block" style="color:#ffd6e8;"></i>
+            <p class="fs-5 text-muted">No hay cobros programados para este mes.</p>
+            <a href="/fiados" class="btn btn-pink px-4 py-2">
+                <i class="fas fa-hand-holding-usd me-2"></i>Ver fiados
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

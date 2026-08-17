@@ -27,6 +27,10 @@
         .form-control, .form-select { border: 2px solid #ffd6e8; border-radius: 10px; }
         .form-control:focus, .form-select:focus { border-color: #ff6bb3; box-shadow: 0 0 0 4px rgba(255, 107, 179, 0.15); }
         .form-label { color: #d81b60; font-weight: 600; font-size: 13px; }
+        .badge-moroso { background: #c2185b; color: #fff; border-radius: 10px; font-size: 11px; font-weight: 700; }
+        .badge-bueno { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; border-radius: 10px; font-size: 11px; font-weight: 700; }
+        .credito-bar { height: 8px; border-radius: 4px; background: #ffe5ec; overflow: hidden; }
+        .credito-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
     </style>
 </head>
 <body>
@@ -74,14 +78,25 @@
                             <th>Documento</th>
                             <th>Teléfono</th>
                             <th>Dirección</th>
+                            <th>Crédito</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for cid, c in clientes.items() %}
+                        {% set limite = c.limite_credito|default(0, true)|float %}
+                        {% set usado = c.credito_usado|default(0, true)|float %}
+                        {% set disponible = limite - usado if limite > 0 else 0 %}
+                        {% set porcentaje = (usado / limite * 100) if limite > 0 else 0 %}
+                        {% set es_moroso = c.moroso|default(false, true) %}
                         <tr>
                             <td class="fw-bold" style="color:#d81b60;">{{ cid }}</td>
-                            <td class="fw-bold text-dark"><i class="fas fa-user-circle me-2" style="color:#ff6bb3;"></i>{{ c.nombre }}</td>
+                            <td class="fw-bold text-dark">
+                                <i class="fas fa-user-circle me-2" style="color:#ff6bb3;"></i>{{ c.nombre }}
+                                {% if es_moroso %}
+                                    <span class="badge badge-moroso ms-1"><i class="fas fa-exclamation-triangle me-1"></i>MOROSO</span>
+                                {% endif %}
+                            </td>
                             <td>{{ c.documento or '—' }}</td>
                             <td>
                                 {% if c.telefono %}
@@ -91,12 +106,23 @@
                                 {% else %}—{% endif %}
                             </td>
                             <td class="text-muted small">{{ c.direccion or '—' }}</td>
+                            <td>
+                                {% if limite > 0 %}
+                                    <div class="small fw-bold" style="color:#d81b60;">${{ '{:,.0f}'.format(usado) }} / ${{ '{:,.0f}'.format(limite) }}</div>
+                                    <div class="credito-bar mt-1">
+                                        <div class="credito-fill" style="width:{{ porcentaje|int }}%; background:{% if porcentaje > 80 %}#c2185b{% elif porcentaje > 50 %}#e6a700{% else %}#2e7d32{% endif %};"></div>
+                                    </div>
+                                    <div class="small text-muted mt-1">Disponible: ${{ '{:,.0f}'.format(disponible) }}</div>
+                                {% else %}
+                                    <span class="text-muted small">Sin límite</span>
+                                {% endif %}
+                            </td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-purple"
                                         data-bs-toggle="modal" data-bs-target="#modalEditar"
                                         data-id="{{ cid }}" data-nombre="{{ c.nombre }}"
                                         data-documento="{{ c.documento }}" data-telefono="{{ c.telefono }}"
-                                        data-direccion="{{ c.direccion }}">
+                                        data-direccion="{{ c.direccion }}" data-limite="{{ c.limite_credito|default(0, true) }}">
                                     <i class="fas fa-pen"></i> Editar
                                 </button>
                                 <form method="POST" action="/clientes/eliminar/{{ cid }}" class="d-inline"
@@ -108,7 +134,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>No hay clientes registrados todavía.
                             </td>
                         </tr>
@@ -144,6 +170,11 @@
                         <div class="mb-1">
                             <label class="form-label">Dirección</label>
                             <input type="text" name="direccion" class="form-control" placeholder="Ej. Av. Los Álamos 456">
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Límite de crédito ($)</label>
+                            <input type="number" name="limite_credito" class="form-control" min="0" step="100" value="0" placeholder="0 = Sin límite">
+                            <div class="form-text small">Monto máximo que el cliente puede deber. 0 = sin límite.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -181,6 +212,11 @@
                             <label class="form-label">Dirección</label>
                             <input type="text" id="editDireccion" name="direccion" class="form-control">
                         </div>
+                        <div class="mb-1">
+                            <label class="form-label">Límite de crédito ($)</label>
+                            <input type="number" id="editLimite" name="limite_credito" class="form-control" min="0" step="100" placeholder="0 = Sin límite">
+                            <div class="form-text small">Monto máximo que el cliente puede deber. 0 = sin límite.</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-purple" data-bs-dismiss="modal">Cancelar</button>
@@ -200,6 +236,7 @@
             document.getElementById('editTelefono').value = btn.dataset.telefono;
             formatearTelefono(document.getElementById('editTelefono'));
             document.getElementById('editDireccion').value = btn.dataset.direccion;
+            document.getElementById('editLimite').value = btn.dataset.limite || 0;
             document.getElementById('formEditar').action = '/clientes/editar/' + encodeURIComponent(btn.dataset.id);
         });
 

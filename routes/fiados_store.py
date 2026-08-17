@@ -1,7 +1,7 @@
 import calendar
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from routes import facturas_store
 from utils import formatear_moneda
@@ -54,6 +54,19 @@ def _fecha_limite(fecha_inicio, frecuencia, n):
     return (fecha_inicio + timedelta(days=dias * n)).isoformat()
 
 
+def _generar_fechas_ruta(inicio, frecuencia, n_cuotas, monto_cuota):
+    fechas = []
+    for i in range(1, n_cuotas + 1):
+        fechas.append({
+            "fecha": _fecha_limite(inicio, frecuencia, i),
+            "cuota_n": i,
+            "monto": monto_cuota,
+            "cobrado": False,
+            "fecha_cobro_real": None,
+        })
+    return fechas
+
+
 def _recalcular_totales(fiado):
     total_pagado = round(
         sum(float(c.get("monto_abonado", 0)) for c in fiado.get("cuotas", [])), 2
@@ -64,7 +77,8 @@ def _recalcular_totales(fiado):
     fiado["estado"] = "Pagado" if todas_pagadas else "Pendiente"
 
 
-def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor):
+def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor,
+                aprobacion_estado="Pendiente", aprobacion_score=0, aprobacion_razon=""):
     total = round(float(factura.get("total", 0)), 2)
     if n_cuotas < 1:
         n_cuotas = 1
@@ -87,6 +101,8 @@ def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor):
             }
         )
 
+    fechas_ruta = _generar_fechas_ruta(inicio, frecuencia, n_cuotas, base)
+
     fiado = {
         "numero": generar_numero(),
         "fecha": fecha,
@@ -98,15 +114,22 @@ def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor):
         "frecuencia": frecuencia,
         "fecha_inicio": fecha_inicio,
         "cuotas": cuotas,
+        "fechas_ruta": fechas_ruta,
         "abonos": [],
         "total_pagado": 0.0,
         "saldo_pendiente": total,
         "estado": "Pendiente",
         "vendedor": vendedor or "",
+        "aprobacion_estado": aprobacion_estado,
+        "aprobacion_score": aprobacion_score,
+        "aprobacion_razon": aprobacion_razon,
+        "reestructurado_de": None,
+        "pago_inicial": 0.0,
     }
     fiados = load_fiados()
     fiados[fiado["numero"]] = fiado
     save_fiados(fiados)
+    _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
     return fiado["numero"]
 
 
@@ -127,7 +150,6 @@ def registrar_abono(numero, fecha, monto, registrado_por):
     if monto > saldo:
         return False, f"El abono supera el saldo pendiente ({formatear_moneda(saldo)})."
 
-    # Distribuir el abono sobre las cuotas pendientes en orden
     restante = monto
     cuotas = fiado.get("cuotas", [])
     for c in cuotas:
@@ -144,6 +166,13 @@ def registrar_abono(numero, fecha, monto, registrado_por):
             c["estado"] = "Pagada"
             c["fecha_pago"] = fecha
 
+    fechas_ruta = fiado.get("fechas_ruta", [])
+    for fr in fechas_ruta:
+        if not fr.get("cobrado") and float(fr.get("monto", 0)) <= monto + 0.005:
+            fr["cobrado"] = True
+            fr["fecha_cobro_real"] = fecha
+            break
+
     abonos = fiado.setdefault("abonos", [])
     abonos.append(
         {
@@ -156,13 +185,66 @@ def registrar_abono(numero, fecha, monto, registrado_por):
 
     _recalcular_totales(fiado)
     save_fiados(fiados)
+    _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
     return True, f"Abono de {formatear_moneda(monto)} registrado correctamente."
+
+
+def aprobar_fiado(numero, estado, razon=""):
+    fiados = load_fiados()
+    fiado = fiados.get(numero)
+    if not fiado:
+        return False, "El fiado no existe."
+    fiado["aprobacion_estado"] = estado
+    fiado["aprobacion_razon"] = razon
+    save_fiados(fiados)
+    return True, f"Fiado {estado.lower()} correctamente."
 
 
 def eliminar_fiado(numero):
     fiados = load_fiados()
     if numero not in fiados:
         return False, "El fiado no existe."
+    fiado = fiados[numero]
     del fiados[numero]
     save_fiados(fiados)
+    _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
     return True, "Fiado eliminado correctamente."
+
+
+def _actualizar_estadisticas_cliente(cliente_id):
+    if not cliente_id:
+        return
+    from routes import scoring
+    scoring.actualizar_credito_cliente(cliente_id)
+    scoring.actualizar_estado_moroso(cliente_id)
+
+    fiados = load_fiados()
+    total = 0
+    pagados = 0
+    con_mora = 0
+    for f in fiados.values():
+        if str(f.get("cliente", {}).get("id", "")) != str(cliente_id):
+            continue
+        total += 1
+        if f.get("estado") == "Pagado":
+            pagados += 1
+        else:
+            for c in f.get("cuotas", []):
+                if c.get("estado") != "Pagada":
+                    fecha_limite = None
+                    try:
+                        fecha_limite = date.fromisoformat(c.get("fecha_limite", ""))
+                    except (TypeError, ValueError):
+                        pass
+                    if fecha_limite and fecha_limite < date.today():
+                        con_mora = 1
+                        break
+
+    from routes import clientes_store
+    clientes = clientes_store.load_clientes()
+    cid = str(cliente_id)
+    if cid in clientes:
+        clientes[cid]["total_fiados"] = total
+        clientes[cid]["fiados_pagados"] = pagados
+        clientes[cid]["fiados_con_mora"] = con_mora
+        clientes_store.save_clientes(clientes)

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes Morosos - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffe5ec 0%, #ffd6e8 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #c2185b; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .btn-whatsapp { background: #25d366; border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-whatsapp:hover { background: #1da851; color: #fff; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(194, 24, 91, 0.2); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .moroso-card { border: none; border-radius: 16px; box-shadow: 0 6px 18px rgba(194, 24, 91, 0.15); border-left: 5px solid #c2185b; margin-bottom: 12px; }
+        .moroso-card .card-body { padding: 14px 18px; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/cobranzas" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-user-slash me-2"></i>Clientes Morosos</h2>
+                <p class="page-subtitle mb-0">Clientes con cuotas vencidas hace más de 30 días. No pueden solicitar nuevos fiados.</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#c2185b; color:#fff;"><i class="fas fa-user-slash"></i></div>
+                    <div>
+                        <div class="text-muted small">Clientes morosos</div>
+                        <div class="fw-bold fs-4" style="color:#c2185b;">{{ morosos|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffe5ec; color:#c2185b;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Total adeudado</div>
+                        <div class="fw-bold fs-4" style="color:#c2185b;">$ {{ '{:,.0f}'.format(total_morosos) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for cl in morosos %}
+        <div class="card moroso-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fas fa-user-circle" style="color:#c2185b; font-size: 20px;"></i>
+                            <span class="fw-bold fs-5" style="color:#c2185b;">{{ cl.nombre }}</span>
+                            <span class="badge" style="background:#c2185b; color:#fff;">{{ cl.max_dias }} días</span>
+                        </div>
+                        {% if cl.telefono %}
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-phone me-1"></i>{{ cl.telefono|tf }}
+                            <a href="https://wa.me/{{ cl.telefono|wa }}" target="_blank" class="ms-2" style="color:#25d366;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if cl.direccion %}
+                        <div class="small text-muted mb-2"><i class="fas fa-map-marker-alt me-1"></i>{{ cl.direccion }}</div>
+                        {% endif %}
+                        {% for it in cl.items %}
+                        <div class="d-flex align-items-center gap-2 small mb-1">
+                            <span class="text-muted">FID{{ it.fiado[-4:] }} · Cuota {{ it.cuota }}</span>
+                            <span class="text-muted">· vence {{ it.fecha_limite }}</span>
+                            <span class="fw-bold" style="color:#c2185b;">${{ '{:,.0f}'.format(it.monto) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted">Total adeudado</div>
+                        <div class="fw-bold fs-4" style="color:#c2185b;">$ {{ '{:,.0f}'.format(cl.deuda_total) }}</div>
+                        {% if cl.telefono %}
+                        <a href="https://wa.me/{{ cl.telefono|wa }}?text={{ 'Hola %s, tenemos registro de una deuda pendiente de $%s desde hace %s días. Es importante que nos contactes para encontrar una solución. Variedades Angie.'|format(cl.nombre, '{:,.0f}'.format(cl.deuda_total), cl.max_dias)|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp mt-2">
+                            <i class="fab fa-whatsapp me-1"></i>Enviar recordatorio
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not morosos %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x mb-3 d-block" style="color:#e9fbe9;"></i>
+            <p class="fs-5 text-muted">No hay clientes morosos. ¡Todos al día!</p>
+            <a href="/cobranzas" class="btn btn-pink px-4 py-2"><i class="fas fa-calendar-check me-2"></i>Ver calendario</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
