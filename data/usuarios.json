@@ -1,6 +1,6 @@
 {
     "admin": {
-        "password": "scrypt:32768:8:1$9qeRbhscepX49yOB$f72efbe3a89cb0948e593ff48b21a3bb0d73a15af6527f70a66885f97d2898cba0a16d5fb3a8ce6ea0296bda40ad2cc72492aa10a8362d2623a0e7628df01091",
+        "password": "scrypt:32768:8:1$dYJFpPrPKpAdG8PL$8491b157fdb44db77e1b72220c84e125f46f73d3ff4b7f845185a9b72c348294aa03f34988370e0d96109d1d43cb695a2155a99ce58656c86bb6d36a881f7269",
         "nombre": "LIYANI",
         "rol": "Dueño",
         "comision": 0.0

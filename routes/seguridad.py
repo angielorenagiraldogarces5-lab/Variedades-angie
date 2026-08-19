@@ -1,3 +1,6 @@
+import secrets
+import string
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from routes import security_store, usuarios_store
@@ -42,6 +45,45 @@ def cambiar_contrasena():
     return render_template(
         "cambiar_contrasena.html",
         debe_cambiar=session.get("debe_cambiar_password"),
+    )
+
+
+@bp.route("/recuperar-contrasena", methods=["GET", "POST"])
+def recuperar_contrasena():
+    temp_password = None
+    username_recuperado = None
+    error_recuperacion = None
+
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        if not username:
+            error_recuperacion = "Ingresá un nombre de usuario."
+        else:
+            usuarios = usuarios_store.load_usuarios()
+            if username not in usuarios:
+                error_recuperacion = f"El usuario '{username}' no existe."
+            else:
+                alphabet = string.ascii_letters + string.digits
+                temp_password = "".join(secrets.choice(alphabet) for _ in range(10))
+                temp_password = "Temp" + temp_password
+                ok, msg = usuarios_store.actualizar_usuario(username, password=temp_password)
+                if ok:
+                    security_store.limpiar_intentos(username)
+                    username_recuperado = username
+                    security_store.registrar_evento(
+                        "recuperacion_password",
+                        username,
+                        "Contraseña reseteada desde recuperación",
+                        request.remote_addr or "",
+                    )
+                else:
+                    error_recuperacion = msg
+
+    return render_template(
+        "recuperar_contrasena.html",
+        temp_password=temp_password,
+        username_recuperado=username_recuperado,
+        error_recuperacion=error_recuperacion,
     )
 
 
