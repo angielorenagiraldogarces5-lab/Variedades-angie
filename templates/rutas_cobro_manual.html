@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutas de Cobro Manual - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(216, 27, 96, 0.18); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .ruta-card { border: none; border-radius: 16px; box-shadow: 0 6px 18px rgba(216, 27, 96, 0.12); margin-bottom: 14px; transition: transform 0.15s; }
+        .ruta-card:hover { transform: translateY(-2px); }
+        .ruta-card .card-body { padding: 18px 22px; }
+        .badge-pendiente { background: #fff4e5; color: #b26a00; }
+        .badge-encurso { background: #e3f2fd; color: #1565c0; }
+        .badge-completada { background: #e9fbe9; color: #2e7d32; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .flash-warning { background: #fff4e5; border: 1px solid #ffb74d; color: #e65100; border-radius: 12px; }
+        .filter-bar { background: #fff; border-radius: 14px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.1); padding: 14px 18px; }
+        .progress-bar-custom { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border-radius: 10px; height: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/cobranzas" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-map-marked-alt me-2"></i>Rutas de Cobro Manual</h2>
+                <p class="page-subtitle mb-0">Creá y gestioná tus rutas de cobranza a mano.</p>
+            </div>
+            <a href="/rutas-cobro-manual/nueva" class="btn btn-pink px-4 py-2">
+                <i class="fas fa-plus me-2"></i>Nueva Ruta
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% elif category == 'danger' %}<i class="fas fa-exclamation-circle me-1"></i>{% else %}<i class="fas fa-info-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-route"></i></div>
+                    <div>
+                        <div class="text-muted small">Total rutas</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_rutas }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-hourglass-half"></i></div>
+                    <div>
+                        <div class="text-muted small">Pendientes</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ rutas_pendientes }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e3f2fd; color:#1565c0;"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="text-muted small">Total esperado</div>
+                        <div class="fw-bold fs-4" style="color:#1565c0;">{{ total_esperado|money }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-check-double"></i></div>
+                    <div>
+                        <div class="text-muted small">Total cobrado</div>
+                        <div class="fw-bold fs-4" style="color:#2e7d32;">{{ total_cobrado|money }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-bar d-flex align-items-center gap-3 mb-4 flex-wrap">
+            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap">
+                <label class="small fw-bold" style="color:#d81b60;">Filtrar:</label>
+                <select name="estado" class="form-select form-select-sm" style="width:auto; border-color:#ffd6e8;">
+                    <option value="">Todos los estados</option>
+                    <option value="Pendiente" {% if filtro_estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="En curso" {% if filtro_estado == 'En curso' %}selected{% endif %}>En curso</option>
+                    <option value="Completada" {% if filtro_estado == 'Completada' %}selected{% endif %}>Completada</option>
+                </select>
+                <input type="date" name="fecha" value="{{ filtro_fecha }}" class="form-control form-control-sm" style="width:auto; border-color:#ffd6e8;">
+                <button type="submit" class="btn btn-pink btn-sm"><i class="fas fa-search me-1"></i>Filtrar</button>
+                {% if filtro_estado or filtro_fecha %}
+                <a href="/rutas-cobro-manual" class="btn btn-outline-purple btn-sm"><i class="fas fa-times me-1"></i>Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% for ruta in rutas %}
+        <div class="card ruta-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="fw-bold fs-5" style="color:#d81b60;">{{ ruta.numero }}</span>
+                            {% if ruta.estado == 'Pendiente' %}
+                                <span class="badge badge-pendiente rounded-pill"><i class="fas fa-hourglass-half me-1"></i>Pendiente</span>
+                            {% elif ruta.estado == 'En curso' %}
+                                <span class="badge badge-encurso rounded-pill"><i class="fas fa-spinner me-1"></i>En curso</span>
+                            {% else %}
+                                <span class="badge badge-completada rounded-pill"><i class="fas fa-check me-1"></i>Completada</span>
+                            {% endif %}
+                        </div>
+                        <div class="fw-semibold mb-1">{{ ruta.nombre }}</div>
+                        <div class="small text-muted mb-2">
+                            <i class="fas fa-calendar me-1"></i>{{ ruta.fecha }}
+                            <span class="mx-2">·</span>
+                            <i class="fas fa-users me-1"></i>{{ ruta.visitantes|length }} visitas
+                            <span class="mx-2">·</span>
+                            <i class="fas fa-user me-1"></i>{{ ruta.creado_por }}
+                        </div>
+                        {% if ruta.observaciones %}
+                        <div class="small text-muted"><i class="fas fa-sticky-note me-1"></i>{{ ruta.observaciones }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <div class="mb-1">
+                            <span class="small text-muted">Cobrado:</span>
+                            <span class="fw-bold" style="color:#2e7d32;">{{ ruta.total_cobrado|money }}</span>
+                            <span class="small text-muted"> / </span>
+                            <span class="fw-bold" style="color:#d81b60;">{{ ruta.total_esperado|money }}</span>
+                        </div>
+                        {% set porcentaje = ((ruta.total_cobrado / ruta.total_esperado * 100) if ruta.total_esperado > 0 else 0)|int %}
+                        <div class="progress mb-2" style="height:8px; width:180px; background:#ffe5ec; border-radius:10px;">
+                            <div class="progress-bar progress-bar-custom" style="width:{{ porcentaje }}%;"></div>
+                        </div>
+                        <a href="/rutas-cobro-manual/{{ ruta.numero }}" class="btn btn-pink btn-sm">
+                            <i class="fas fa-eye me-1"></i>Ver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not rutas %}
+        <div class="text-center py-5">
+            <i class="fas fa-map-marked-alt fa-3x mb-3 d-block" style="color:#ffd6e8;"></i>
+            <p class="fs-5 text-muted">No hay rutas de cobro manual creadas.</p>
+            <a href="/rutas-cobro-manual/nueva" class="btn btn-pink px-4 py-2">
+                <i class="fas fa-plus me-2"></i>Crear primera ruta
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

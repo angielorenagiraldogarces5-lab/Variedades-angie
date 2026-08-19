@@ -68,6 +68,11 @@
             <a href="/fiados/{{ fiado.numero }}/tarjeta" class="btn btn-outline-purple btn-sm" target="_blank">
                 <i class="fas fa-credit-card me-1"></i>Tarjeta de Cobro
             </a>
+            {% if session.get('rol') in ['Admin', 'Dueño'] %}
+            <a href="/fiados/{{ fiado.numero }}/editar" class="btn btn-outline-purple btn-sm">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            {% endif %}
             {% if fiado.estado != 'Pagado' %}
             <a href="/fiados/{{ fiado.numero }}/reestructurar" class="btn btn-sm" style="background:#fff4e5; color:#b26a00; border:1px solid #ffc566; border-radius:10px; font-weight:600;">
                 <i class="fas fa-redo me-1"></i>Reestructurar

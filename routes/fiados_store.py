@@ -200,6 +200,65 @@ def aprobar_fiado(numero, estado, razon=""):
     return True, f"Fiado {estado.lower()} correctamente."
 
 
+def editar_fiado(numero, cliente_nombre=None, cliente_telefono=None,
+                 cliente_direccion=None, cliente_documento=None,
+                 vendedor=None, frecuencia=None, fecha_inicio=None,
+                 observaciones=None):
+    fiados = load_fiados()
+    fiado = fiados.get(numero)
+    if not fiado:
+        return False, "El fiado no existe."
+
+    cliente = fiado.get("cliente", {})
+    if cliente_nombre is not None:
+        cliente["nombre"] = cliente_nombre
+    if cliente_telefono is not None:
+        cliente["telefono"] = cliente_telefono
+    if cliente_direccion is not None:
+        cliente["direccion"] = cliente_direccion
+    if cliente_documento is not None:
+        cliente["documento"] = cliente_documento
+    fiado["cliente"] = cliente
+
+    if vendedor is not None:
+        fiado["vendedor"] = vendedor
+    if observaciones is not None:
+        fiado["observaciones"] = observaciones
+
+    recalcular = False
+    if frecuencia and frecuencia in FRECUENCIAS and frecuencia != fiado.get("frecuencia"):
+        fiado["frecuencia"] = frecuencia
+        recalcular = True
+
+    if fecha_inicio and fecha_inicio != fiado.get("fecha_inicio"):
+        fiado["fecha_inicio"] = fecha_inicio
+        try:
+            inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            fiado["fecha_inicio"] = fecha_inicio
+            recalcular = True
+        except ValueError:
+            pass
+
+    if recalcular:
+        freq = fiado.get("frecuencia", "Semanal")
+        try:
+            inicio = datetime.strptime(fiado.get("fecha_inicio", fiado.get("fecha", "")), "%Y-%m-%d").date()
+        except ValueError:
+            inicio = date.today()
+
+        for c in fiado.get("cuotas", []):
+            if c.get("estado") != "Pagada":
+                c["fecha_limite"] = _fecha_limite(inicio, freq, c["n"])
+
+        for fr in fiado.get("fechas_ruta", []):
+            if not fr.get("cobrado"):
+                fr["fecha"] = _fecha_limite(inicio, freq, fr.get("cuota_n", 1))
+
+    save_fiados(fiados)
+    _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
+    return True, "Fiado actualizado correctamente."
+
+
 def eliminar_fiado(numero):
     fiados = load_fiados()
     if numero not in fiados:

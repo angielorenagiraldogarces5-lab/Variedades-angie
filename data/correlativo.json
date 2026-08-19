@@ -5,5 +5,6 @@
     "NotaCredito": 1,
     "Pagare": 1,
     "Caja": 6,
-    "Compra": 2
+    "Compra": 2,
+    "RutaCobro": 0
 }

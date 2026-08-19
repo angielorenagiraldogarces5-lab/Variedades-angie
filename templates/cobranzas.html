@@ -92,6 +92,10 @@
             font-size: 11px;
             border-left: 3px solid #ff6bb3;
         }
+        .cal-cobro.ruta-manual {
+            background: linear-gradient(135deg, #e8eaf6, #f0f0ff);
+            border-left-color: #5c6bc0;
+        }
         .cal-cobro.vencida {
             background: linear-gradient(135deg, #ffe0e0, #fff0f0);
             border-left-color: #c2185b;
@@ -176,6 +180,9 @@
                 <p class="page-subtitle mb-0">Sabé exactamente a quién cobrar y cuándo.</p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
+                <a href="/rutas-cobro-manual" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-map-marked-alt me-2"></i>Rutas Manuales
+                </a>
                 <a href="/ruta-cobro" class="btn btn-outline-purple px-3 py-2">
                     <i class="fas fa-route me-2"></i>Ruta de Cobro
                 </a>
@@ -243,6 +250,7 @@
         <div class="d-flex align-items-center gap-3 mb-3">
             <div class="legend-item"><div class="legend-dot" style="background:#ffd6e8; border:2px solid #d81b60;"></div> Hoy</div>
             <div class="legend-item"><div class="legend-dot" style="background:#fff9ec; border-left:4px solid #ff6bb3;"></div> Con cobros</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e8eaf6; border-left:4px solid #5c6bc0;"></div> Ruta manual</div>
             <div class="legend-item"><div class="legend-dot" style="background:#ffe0e0; border-left:4px solid #c2185b;"></div> Vencidas</div>
             <div class="legend-item"><div class="legend-dot" style="background:#e9fbe9; border-left:4px solid #2e7d32;"></div> Cobrar hoy</div>
         </div>
@@ -271,12 +279,21 @@
                         </div>
                         {% if tiene %}
                             {% for item in cobros[dia] %}
-                            <div class="cal-cobro {{ 'cal-cobro-vencida' if item.vencida else '' }} {{ 'hoy-cobro' if item.hoy else '' }}">
+                            <div class="cal-cobro {{ 'cal-cobro-vencida' if item.vencida else '' }} {{ 'hoy-cobro' if item.hoy else '' }} {{ 'ruta-manual' if item.tipo == 'ruta_manual' else '' }}">
                                 <div class="cal-cobro-cliente">{{ item.cliente }}</div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="cal-cobro-monto">{{ item.monto|money }}</span>
-                                    <span class="cal-cobro-info">FID{{ item.fiado[-4:] }} C{{ item.cuota }}</span>
+                                    <span class="cal-cobro-info">
+                                        {% if item.tipo == 'ruta_manual' %}
+                                            <i class="fas fa-walking"></i> {{ item.ruta_numero }}
+                                        {% else %}
+                                            FID{{ item.fiado[-4:] }} C{{ item.cuota }}
+                                        {% endif %}
+                                    </span>
                                 </div>
+                                {% if item.cobrador %}
+                                <div class="cal-cobro-info" style="color:#5c6bc0; font-weight:600;"><i class="fas fa-user-tie me-1"></i>{{ item.cobrador }}</div>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         {% endif %}
@@ -302,7 +319,14 @@
                     <div class="resumen-item {{ 'text-danger' if item.vencida else '' }}">
                         <div>
                             <span class="fw-bold">{{ item.cliente }}</span>
-                            <span class="text-muted ms-1">· FID{{ item.fiado[-4:] }} · Cuota {{ item.cuota }}</span>
+                            {% if item.tipo == 'ruta_manual' %}
+                                <span class="text-muted ms-1">· {{ item.ruta_numero }} · {{ item.ruta_nombre }}</span>
+                            {% else %}
+                                <span class="text-muted ms-1">· FID{{ item.fiado[-4:] }} · Cuota {{ item.cuota }}</span>
+                            {% endif %}
+                            {% if item.cobrador %}
+                                <span class="badge ms-1" style="background:#e8eaf6; color:#5c6bc0;"><i class="fas fa-user-tie me-1"></i>{{ item.cobrador }}</span>
+                            {% endif %}
                             {% if item.vencida %}<span class="badge bg-danger ms-1">Vencida</span>{% endif %}
                             {% if item.hoy %}<span class="badge bg-success ms-1">¡Hoy!</span>{% endif %}
                         </div>

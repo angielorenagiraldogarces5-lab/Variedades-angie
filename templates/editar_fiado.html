@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar {{ fiado.numero }} - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .card-form { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); }
+        .card-form .card-header { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); color: #fff; border-radius: 18px 18px 0 0; border: none; font-weight: 700; }
+        .form-control, .form-select { border: 2px solid #ffd6e8; border-radius: 10px; }
+        .form-control:focus { border-color: #ff6bb3; box-shadow: 0 0 0 4px rgba(255, 107, 179, 0.15); }
+        .form-label { color: #d81b60; font-weight: 600; font-size: 13px; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .info-readonly { background: #fff6fa; border: 1px solid #ffe3ef; border-radius: 10px; padding: 10px 14px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/fiados/{{ fiado.numero }}" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="mb-4">
+            <h2 class="page-title mb-0"><i class="fas fa-edit me-2"></i>Editar Fiado {{ fiado.numero }}</h2>
+            <p class="page-subtitle mb-0">Corregí los datos del fiado. Solo campos editables.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card card-form">
+                    <div class="card-header py-3 px-4">
+                        <i class="fas fa-user-edit me-2"></i>Datos editables
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" action="/fiados/{{ fiado.numero }}/editar">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <h6 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-user me-2"></i>Datos del cliente</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" name="cliente_nombre" class="form-control" value="{{ fiado.cliente.nombre }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Documento</label>
+                                    <input type="text" name="cliente_documento" class="form-control" value="{{ fiado.cliente.documento or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" name="cliente_telefono" class="form-control" value="{{ fiado.cliente.telefono or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Dirección</label>
+                                    <input type="text" name="cliente_direccion" class="form-control" value="{{ fiado.cliente.direccion or '' }}">
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-cog me-2"></i>Configuración del fiado</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Vendedor</label>
+                                    <input type="text" name="vendedor" class="form-control" value="{{ fiado.vendedor or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Frecuencia</label>
+                                    <select name="frecuencia" class="form-select">
+                                        {% for f in frecuencias %}
+                                        <option value="{{ f }}" {% if fiado.frecuencia == f %}selected{% endif %}>{{ f }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha inicio cuotas</label>
+                                    <input type="date" name="fecha_inicio" class="form-control" value="{{ fiado.fecha_inicio or fiado.fecha }}">
+                                    <div class="small text-muted mt-1">Al cambiar esto se recalculan las fechas de las cuotas no pagadas.</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-pink px-4 py-2">
+                                    <i class="fas fa-save me-1"></i>Guardar cambios
+                                </button>
+                                <a href="/fiados/{{ fiado.numero }}" class="btn btn-outline-purple px-4 py-2">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card card-form mb-4">
+                    <div class="card-header py-3 px-4">
+                        <i class="fas fa-info-circle me-2"></i>Datos de solo lectura
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <div class="small text-muted">Número de fiado</div>
+                            <div class="fw-bold" style="color:#d81b60;">{{ fiado.numero }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted">Factura origen</div>
+                            <div class="fw-bold">{{ fiado.factura_origen }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted">Fecha de creación</div>
+                            <div>{{ fiado.fecha }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted">Total</div>
+                            <div class="fw-bold fs-5" style="color:#d81b60;">{{ fiado.total|money }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted">Cuotas / Cantidad</div>
+                            <div>{{ fiado.frecuencia }} · {{ fiado.n_cuotas }} cuotas</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted">Saldo pendiente</div>
+                            <div class="fw-bold" style="color:#b26a00;">{{ fiado.saldo_pendiente|money }}</div>
+                        </div>
+                        <div class="small text-muted mt-3">
+                            <i class="fas fa-info-circle me-1"></i>Para modificar montos o cantidad de cuotas, usá la reestructuración.
+                        </div>
+                    </div>
+                </div>
+
+                <a href="/fiados/{{ fiado.numero }}/reestructurar" class="btn btn-outline-purple w-100 py-2">
+                    <i class="fas fa-redo me-1"></i>Reestructurar fiado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, redirect, render_template, request, session, url_for
 
-from routes import fiados_store
+from routes import fiados_store, rutas_cobro_manual_store
 
 bp = Blueprint("cobranzas", __name__)
 
@@ -142,6 +142,10 @@ def calendario():
     celdas = _generar_calendario(anio, mes)
     fiados = fiados_store.load_fiados()
     cobros = _cobros_por_dia(fiados, anio, mes)
+
+    rutas_manuales = rutas_cobro_manual_store.visitantes_para_calendario(anio, mes)
+    for dia, visitas in rutas_manuales.items():
+        cobros.setdefault(dia, []).extend(visitas)
 
     total_cobrar = sum(
         sum(item["monto"] for item in items)

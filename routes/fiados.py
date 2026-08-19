@@ -333,6 +333,50 @@ def aprobar(numero):
     return redirect(url_for("fiados.ver", numero=numero))
 
 
+@bp.route("/fiados/<numero>/editar", methods=["GET", "POST"])
+def editar(numero):
+    if not _logueado():
+        return redirect(url_for("login.login"))
+    if session.get("rol") not in ("Admin", "Dueño"):
+        flash("No tenés permisos para editar fiados.", "danger")
+        return redirect(url_for("fiados.ver", numero=numero))
+
+    fiado = fiados_store.load_fiados().get(numero)
+    if not fiado:
+        flash("El fiado no existe.", "danger")
+        return redirect(url_for("fiados.listar"))
+
+    if request.method == "POST":
+        cliente_nombre = request.form.get("cliente_nombre", "").strip()
+        cliente_telefono = request.form.get("cliente_telefono", "").strip()
+        cliente_direccion = request.form.get("cliente_direccion", "").strip()
+        cliente_documento = request.form.get("cliente_documento", "").strip()
+        vendedor = request.form.get("vendedor", "").strip()
+        frecuencia = request.form.get("frecuencia", "").strip()
+        fecha_inicio = request.form.get("fecha_inicio", "").strip()
+
+        if not cliente_nombre:
+            flash("El nombre del cliente es obligatorio.", "danger")
+            return render_template("editar_fiado.html", fiado=fiado,
+                                   frecuencias=fiados_store.FRECUENCIAS)
+
+        ok, msg = fiados_store.editar_fiado(
+            numero,
+            cliente_nombre=cliente_nombre,
+            cliente_telefono=cliente_telefono,
+            cliente_direccion=cliente_direccion,
+            cliente_documento=cliente_documento,
+            vendedor=vendedor,
+            frecuencia=frecuencia or None,
+            fecha_inicio=fecha_inicio or None,
+        )
+        flash(msg, "success" if ok else "danger")
+        return redirect(url_for("fiados.ver", numero=numero))
+
+    return render_template("editar_fiado.html", fiado=fiado,
+                           frecuencias=fiados_store.FRECUENCIAS)
+
+
 @bp.route("/fiados/<numero>/reestructurar", methods=["GET", "POST"])
 def reestructurar(numero):
     if not _logueado():
