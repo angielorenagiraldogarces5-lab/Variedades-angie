@@ -38,6 +38,7 @@ def formulario():
         frecuencias=fiados_store.FRECUENCIAS,
         fecha_hoy=ahora().strftime("%Y-%m-%d"),
         contador=request.args.get("contador", 0, type=int),
+        total_productos=request.args.get("total_productos", 0, type=int),
     )
 
 
@@ -67,6 +68,12 @@ def guardar():
     direccion = request.form.get("cliente_direccion", "").strip()
     ciudad = request.form.get("ciudad", "").strip()
     articulo = request.form.get("articulo", "").strip()
+    try:
+        cantidad = int(request.form.get("cantidad", 1) or 1)
+    except ValueError:
+        cantidad = 1
+    if cantidad < 1:
+        cantidad = 1
     fecha_venta = request.form.get("fecha_venta", "").strip() or ahora().strftime("%Y-%m-%d")
     vendedor = request.form.get("vendedor", "").strip()
 
@@ -107,7 +114,7 @@ def guardar():
     if articulo:
         items.append({
             "descripcion": articulo,
-            "cantidad": 1,
+            "cantidad": cantidad,
             "precio": total,
         })
 
@@ -167,13 +174,14 @@ def guardar():
         idx += 1
 
     contador = request.form.get("contador", 0, type=int) + 1
+    total_productos = request.form.get("total_productos", 0, type=int) + cantidad
 
     fiado_final = fiados_store.load_fiados().get(numero_fiado)
     saldo = fiado_final.get("saldo_pendiente", 0) if fiado_final else 0
 
     flash(
         f"Cobro #{contador} cargado: {nombre_cliente} · {numero_fiado} · "
-        f"Saldo: ${saldo:,.2f} · {abonos_registrados} abono(s) registrado(s).",
+        f"{cantidad} producto(s) · Saldo: ${saldo:,.2f} · {abonos_registrados} abono(s) registrado(s).",
         "success",
     )
 
@@ -181,4 +189,4 @@ def guardar():
     if continuar == "finalizar":
         return redirect(url_for("fiados.listar"))
 
-    return redirect(url_for("importar_cobros.formulario", contador=contador))
+    return redirect(url_for("importar_cobros.formulario", contador=contador, total_productos=total_productos))
