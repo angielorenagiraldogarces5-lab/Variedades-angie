@@ -73,7 +73,7 @@
         {% set monto_pendiente = pendientes|sum(attribute='saldo_pendiente') %}
         {% set total_productos_list = [] %}
         {% for f in fiados.values() %}
-            {% for item in f.items %}
+            {% for item in f["items"] %}
                 {% if total_productos_list.append(item.cantidad) %}{% endif %}
             {% endfor %}
         {% endfor %}
@@ -286,7 +286,7 @@
                             <td>{{ f.fecha }}</td>
                             <td>{{ f.cliente.nombre }}</td>
                             <td><a href="/facturas/{{ f.factura_origen }}" class="text-decoration-none" style="color:#ff6bb3;">{{ f.factura_origen }}</a></td>
-                            <td>{% set ns = namespace(cant=0) %}{% for item in f.items %}{% set ns.cant = ns.cant + item.cantidad %}{% endfor %}{{ ns.cant }}</td>
+                            <td>{% set ns = namespace(cant=0) %}{% for item in f["items"] %}{% set ns.cant = ns.cant + item.cantidad %}{% endfor %}{{ ns.cant }}</td>
                             <td>{{ f.n_cuotas }}</td>
                             <td class="fw-bold">{{ f.total|money }}</td>
                             <td>{{ f.total_pagado|money }}</td>
