@@ -58,6 +58,7 @@ from routes import (
     fiados,
     importar_cobros,
     inventario,
+    libro_contabilidad,
     login,
     logout,
     notas_credito,
@@ -101,6 +102,7 @@ app.register_blueprint(recordatorios.bp)
 app.register_blueprint(ruta_cobro.bp)
 app.register_blueprint(rutas_cobro_manual.bp)
 app.register_blueprint(importar_cobros.bp)
+app.register_blueprint(libro_contabilidad.bp)
 
 # La API se autentica con tokens Bearer, no con cookies: queda exenta de CSRF.
 csrf.exempt(api.bp)
