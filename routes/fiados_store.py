@@ -47,61 +47,44 @@ def _sumar_meses(fecha, meses):
     return fecha.replace(year=anio, month=mes, day=dia)
 
 
-def _fecha_limite(fecha_inicio, frecuencia, n):
-    if frecuencia == "Mensual":
-        return _sumar_meses(fecha_inicio, n).isoformat()
-    dias = 7 if frecuencia == "Semanal" else 15
-    return (fecha_inicio + timedelta(days=dias * n)).isoformat()
-
-
-def _generar_fechas_ruta(inicio, frecuencia, n_cuotas, monto_cuota):
+def _generar_fechas_ruta(inicio, frecuencia):
     fechas = []
-    for i in range(1, n_cuotas + 1):
-        fechas.append({
-            "fecha": _fecha_limite(inicio, frecuencia, i),
-            "cuota_n": i,
-            "monto": monto_cuota,
-            "cobrado": False,
-            "fecha_cobro_real": None,
-        })
+    if frecuencia == "Mensual":
+        for i in range(1, 13):
+            fecha = _sumar_meses(inicio, i)
+            fechas.append({
+                "fecha": fecha.isoformat(),
+                "cobrado": False,
+                "fecha_cobro_real": None,
+            })
+    else:
+        dias = 7 if frecuencia == "Semanal" else 15
+        n_dates = 52 if frecuencia == "Semanal" else 26
+        for i in range(1, n_dates + 1):
+            fecha = inicio + timedelta(days=dias * i)
+            fechas.append({
+                "fecha": fecha.isoformat(),
+                "cobrado": False,
+                "fecha_cobro_real": None,
+            })
     return fechas
 
 
 def _recalcular_totales(fiado):
     total_pagado = round(
-        sum(float(c.get("monto_abonado", 0)) for c in fiado.get("cuotas", [])), 2
+        sum(float(a.get("monto", 0)) for a in fiado.get("abonos", [])), 2
     )
     fiado["total_pagado"] = total_pagado
     fiado["saldo_pendiente"] = round(float(fiado.get("total", 0)) - total_pagado, 2)
-    todas_pagadas = all(c.get("estado") == "Pagada" for c in fiado.get("cuotas", []))
-    fiado["estado"] = "Pagado" if todas_pagadas else "Pendiente"
+    fiado["estado"] = "Pagado" if fiado["saldo_pendiente"] <= 0 else "Pendiente"
 
 
-def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor,
+def crear_fiado(fecha, factura, frecuencia, fecha_inicio, vendedor,
                 aprobacion_estado="Pendiente", aprobacion_score=0, aprobacion_razon=""):
     total = round(float(factura.get("total", 0)), 2)
-    if n_cuotas < 1:
-        n_cuotas = 1
-    base = round(total / n_cuotas, 2)
     inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
 
-    cuotas = []
-    acumulado = 0.0
-    for i in range(1, n_cuotas + 1):
-        monto = round(total - acumulado, 2) if i == n_cuotas else base
-        acumulado = round(acumulado + monto, 2)
-        cuotas.append(
-            {
-                "n": i,
-                "monto": monto,
-                "monto_abonado": 0.0,
-                "fecha_limite": _fecha_limite(inicio, frecuencia, i),
-                "fecha_pago": None,
-                "estado": "Pendiente",
-            }
-        )
-
-    fechas_ruta = _generar_fechas_ruta(inicio, frecuencia, n_cuotas, base)
+    fechas_ruta = _generar_fechas_ruta(inicio, frecuencia)
 
     fiado = {
         "numero": generar_numero(),
@@ -110,10 +93,8 @@ def crear_fiado(fecha, factura, n_cuotas, frecuencia, fecha_inicio, vendedor,
         "cliente": factura.get("cliente", {}),
         "items": factura.get("items", []),
         "total": total,
-        "n_cuotas": n_cuotas,
         "frecuencia": frecuencia,
         "fecha_inicio": fecha_inicio,
-        "cuotas": cuotas,
         "fechas_ruta": fechas_ruta,
         "abonos": [],
         "total_pagado": 0.0,
@@ -150,25 +131,9 @@ def registrar_abono(numero, fecha, monto, registrado_por):
     if monto > saldo:
         return False, f"El abono supera el saldo pendiente ({formatear_moneda(saldo)})."
 
-    restante = monto
-    cuotas = fiado.get("cuotas", [])
-    for c in cuotas:
-        if c.get("estado") == "Pagada" or restante <= 0:
-            continue
-        pendiente_cuota = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
-        if pendiente_cuota <= 0:
-            continue
-        aplicar = round(min(restante, pendiente_cuota), 2)
-        c["monto_abonado"] = round(float(c.get("monto_abonado", 0)) + aplicar, 2)
-        restante = round(restante - aplicar, 2)
-        if c["monto_abonado"] >= float(c.get("monto", 0)) - 0.005:
-            c["monto_abonado"] = float(c.get("monto", 0))
-            c["estado"] = "Pagada"
-            c["fecha_pago"] = fecha
-
     fechas_ruta = fiado.get("fechas_ruta", [])
     for fr in fechas_ruta:
-        if not fr.get("cobrado") and float(fr.get("monto", 0)) <= monto + 0.005:
+        if not fr.get("cobrado"):
             fr["cobrado"] = True
             fr["fecha_cobro_real"] = fecha
             break
@@ -232,12 +197,7 @@ def editar_fiado(numero, cliente_nombre=None, cliente_telefono=None,
 
     if fecha_inicio and fecha_inicio != fiado.get("fecha_inicio"):
         fiado["fecha_inicio"] = fecha_inicio
-        try:
-            inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
-            fiado["fecha_inicio"] = fecha_inicio
-            recalcular = True
-        except ValueError:
-            pass
+        recalcular = True
 
     if recalcular:
         freq = fiado.get("frecuencia", "Semanal")
@@ -245,14 +205,7 @@ def editar_fiado(numero, cliente_nombre=None, cliente_telefono=None,
             inicio = datetime.strptime(fiado.get("fecha_inicio", fiado.get("fecha", "")), "%Y-%m-%d").date()
         except ValueError:
             inicio = date.today()
-
-        for c in fiado.get("cuotas", []):
-            if c.get("estado") != "Pagada":
-                c["fecha_limite"] = _fecha_limite(inicio, freq, c["n"])
-
-        for fr in fiado.get("fechas_ruta", []):
-            if not fr.get("cobrado"):
-                fr["fecha"] = _fecha_limite(inicio, freq, fr.get("cuota_n", 1))
+        fiado["fechas_ruta"] = _generar_fechas_ruta(inicio, freq)
 
     save_fiados(fiados)
     _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
@@ -281,6 +234,7 @@ def _actualizar_estadisticas_cliente(cliente_id):
     total = 0
     pagados = 0
     con_mora = 0
+    hoy = date.today()
     for f in fiados.values():
         if str(f.get("cliente", {}).get("id", "")) != str(cliente_id):
             continue
@@ -288,16 +242,16 @@ def _actualizar_estadisticas_cliente(cliente_id):
         if f.get("estado") == "Pagado":
             pagados += 1
         else:
-            for c in f.get("cuotas", []):
-                if c.get("estado") != "Pagada":
-                    fecha_limite = None
-                    try:
-                        fecha_limite = date.fromisoformat(c.get("fecha_limite", ""))
-                    except (TypeError, ValueError):
-                        pass
-                    if fecha_limite and fecha_limite < date.today():
-                        con_mora = 1
-                        break
+            for fr in f.get("fechas_ruta", []):
+                if fr.get("cobrado"):
+                    continue
+                try:
+                    fecha_limite = date.fromisoformat(fr.get("fecha", ""))
+                except (TypeError, ValueError):
+                    continue
+                if fecha_limite < hoy:
+                    con_mora = 1
+                    break
 
     from routes import clientes_store
     clientes = clientes_store.load_clientes()

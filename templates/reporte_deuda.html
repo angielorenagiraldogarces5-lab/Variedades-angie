@@ -116,20 +116,20 @@
         {% if items %}
         <div class="card rango-card mb-4">
             <div class="rango-header" style="background:{{ color }};">
-                <i class="fas {{ icono }} me-2"></i>{{ titulo }} ({{ items|length }} cuotas · ${{ '{:,.0f}'.format(items|sum(attribute='monto')) }})
+                <i class="fas {{ icono }} me-2"></i>{{ titulo }} ({{ items|length }} fiados · ${{ '{:,.0f}'.format(items|sum(attribute='monto')) }})
             </div>
             <div class="rango-body">
                 {% for it in items %}
                 <div class="cliente-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <span class="fw-bold" style="color:#d81b60;">{{ it.cliente }}</span>
-                        <span class="text-muted small ms-2">FID{{ it.fiado[-4:] }} · Cuota {{ it.cuota }}</span>
+                        <span class="text-muted small ms-2">FID{{ it.fiado[-4:] }}</span>
                         <span class="text-muted small ms-2">{{ it.dias }} días</span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <span class="fw-bold" style="color:#c2185b;">${{ '{:,.0f}'.format(it.monto) }}</span>
                         {% if it.telefono %}
-                        <a href="https://wa.me/{{ it.telefono|wa }}?text={{ 'Hola, te recordamos que tu cuota N°%s de $%s está vencida desde hace %s días. Por favor, acercate a abonar. Gracias! Variedades Angie.'|format(it.cuota, '{:,.0f}'.format(it.monto), it.dias)|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp">
+                        <a href="https://wa.me/{{ it.telefono|wa }}?text={{ 'Hola, te recordamos que tu saldo pendiente de $%s de FID%s está vencido desde hace %s días. Por favor, acercate a abonar. Gracias! Variedades Angie.'|format('{:,.0f}'.format(it.monto), it.fiado[-4:], it.dias)|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp">
                             <i class="fab fa-whatsapp"></i>
                         </a>
                         {% endif %}

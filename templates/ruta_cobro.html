@@ -11,8 +11,8 @@
         .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
         .page-title { color: #d81b60; font-weight: 800; }
         .page-subtitle { color: #d9a5c0; }
-        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; }
-        .btn-pink:hover { transform: translateY(-2px); color: #fff; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
         .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
         .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
         .btn-whatsapp { background: #25d366; border: none; color: #fff; border-radius: 10px; font-weight: 600; }
@@ -126,15 +126,14 @@
                         {% endif %}
                         <div class="d-flex align-items-center gap-3 mt-2">
                             <span class="small fw-bold" style="color:#d81b60;">
-                                <i class="fas fa-hand-holding-usd me-1"></i>FID{{ r.fiado[-4:] }} · Cuota {{ r.cuota }}/{{ r.total_cuotas }}
+                                <i class="fas fa-hand-holding-usd me-1"></i>FID{{ r.fiado[-4:] }} · {{ r.frecuencia }}
                             </span>
-                            <span class="small text-muted">{{ r.frecuencia }}</span>
                         </div>
                     </div>
                     <div class="text-end">
                         <div class="fw-bold fs-4 mb-2" style="color:#c2185b;">{{ r.monto|money }}</div>
                         {% if r.telefono_wa %}
-                        <a href="https://wa.me/{{ r.telefono_wa }}?text={{ 'Hola, te recordamos que tu cuota N°%s de $%s vence hoy. ¡No te olvides de abonar! Variedades Angie.'|format(r.cuota, '{:,.0f}'.format(r.monto))|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp">
+                        <a href="https://wa.me/{{ r.telefono_wa }}?text={{ 'Hola, te recordamos que tu saldo pendiente de $%s vence hoy. ¡No te olvides de abonar! Variedades Angie.'|format('{:,.0f}'.format(r.monto))|urlencode }}" target="_blank" class="btn btn-sm btn-whatsapp">
                             <i class="fab fa-whatsapp me-1"></i>Recordar
                         </a>
                         {% endif %}

@@ -55,9 +55,9 @@ def _construir_libro():
             "estado": f.get("estado", "Pendiente"),
         })
         if f.get("estado") != "Pagado":
-            for cuota in f.get("cuotas", []):
-                if cuota.get("estado") != "Pagada":
-                    fecha_lim = _parsear_fecha(cuota.get("fecha_limite"))
+            for fr in f.get("fechas_ruta", []):
+                if not fr.get("cobrado"):
+                    fecha_lim = _parsear_fecha(fr.get("fecha"))
                     if fecha_lim and fecha_lim < date.today():
                         c["tiene_mora"] = True
                         break

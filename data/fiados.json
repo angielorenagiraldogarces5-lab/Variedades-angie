@@ -24,99 +24,136 @@
             }
         ],
         "total": 430000.0,
-        "n_cuotas": 6,
         "frecuencia": "Quincenal",
         "fecha_inicio": "2026-08-07",
-        "cuotas": [
-            {
-                "n": 1,
-                "monto": 71666.67,
-                "monto_abonado": 71666.67,
-                "fecha_limite": "2026-08-22",
-                "fecha_pago": "2026-08-07",
-                "estado": "Pagada"
-            },
-            {
-                "n": 2,
-                "monto": 71666.67,
-                "monto_abonado": 71666.67,
-                "fecha_limite": "2026-09-06",
-                "fecha_pago": "2026-08-07",
-                "estado": "Pagada"
-            },
-            {
-                "n": 3,
-                "monto": 71666.67,
-                "monto_abonado": 71666.67,
-                "fecha_limite": "2026-09-21",
-                "fecha_pago": "2026-08-13",
-                "estado": "Pagada"
-            },
-            {
-                "n": 4,
-                "monto": 71666.67,
-                "monto_abonado": 64999.99,
-                "fecha_limite": "2026-10-06",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 5,
-                "monto": 71666.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-21",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 6,
-                "monto": 71666.65,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-11-05",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            }
-        ],
         "fechas_ruta": [
             {
-                "fecha": "2026-08-22",
-                "cuota_n": 1,
-                "monto": 71666.67,
+                "fecha": "2026-08-07",
                 "cobrado": true,
                 "fecha_cobro_real": "2026-08-07"
             },
             {
+                "fecha": "2026-08-22",
+                "cobrado": true,
+                "fecha_cobro_real": "2026-08-13"
+            },
+            {
                 "fecha": "2026-09-06",
-                "cuota_n": 2,
-                "monto": 71666.67,
-                "cobrado": false,
-                "fecha_cobro_real": null
+                "cobrado": true,
+                "fecha_cobro_real": "2026-08-18"
             },
             {
                 "fecha": "2026-09-21",
-                "cuota_n": 3,
-                "monto": 71666.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-06",
-                "cuota_n": 4,
-                "monto": 71666.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-21",
-                "cuota_n": 5,
-                "monto": 71666.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-11-05",
-                "cuota_n": 6,
-                "monto": 71666.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-20",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-05",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-20",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-04",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-19",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-03",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-18",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-05",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-20",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-04",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-19",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-04",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-19",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-03",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-18",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-03",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-18",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-02",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-17",
                 "cobrado": false,
                 "fecha_cobro_real": null
             }
@@ -176,99 +213,136 @@
             }
         ],
         "total": 1000.0,
-        "n_cuotas": 6,
         "frecuencia": "Quincenal",
         "fecha_inicio": "2026-08-17",
-        "cuotas": [
-            {
-                "n": 1,
-                "monto": 166.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-09-01",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 2,
-                "monto": 166.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-09-16",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 3,
-                "monto": 166.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-01",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 4,
-                "monto": 166.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-16",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 5,
-                "monto": 166.67,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-31",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 6,
-                "monto": 166.65,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-11-15",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            }
-        ],
         "fechas_ruta": [
             {
+                "fecha": "2026-08-17",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
                 "fecha": "2026-09-01",
-                "cuota_n": 1,
-                "monto": 166.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-09-16",
-                "cuota_n": 2,
-                "monto": 166.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-01",
-                "cuota_n": 3,
-                "monto": 166.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-16",
-                "cuota_n": 4,
-                "monto": 166.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-31",
-                "cuota_n": 5,
-                "monto": 166.67,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-11-15",
-                "cuota_n": 6,
-                "monto": 166.67,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-15",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-15",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-12",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-27",
                 "cobrado": false,
                 "fecha_cobro_real": null
             }
@@ -309,99 +383,136 @@
             }
         ],
         "total": 50000.0,
-        "n_cuotas": 6,
         "frecuencia": "Quincenal",
         "fecha_inicio": "2026-08-17",
-        "cuotas": [
-            {
-                "n": 1,
-                "monto": 8333.33,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-09-01",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 2,
-                "monto": 8333.33,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-09-16",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 3,
-                "monto": 8333.33,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-01",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 4,
-                "monto": 8333.33,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-16",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 5,
-                "monto": 8333.33,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-10-31",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            },
-            {
-                "n": 6,
-                "monto": 8333.35,
-                "monto_abonado": 0.0,
-                "fecha_limite": "2026-11-15",
-                "fecha_pago": null,
-                "estado": "Pendiente"
-            }
-        ],
         "fechas_ruta": [
             {
+                "fecha": "2026-08-17",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
                 "fecha": "2026-09-01",
-                "cuota_n": 1,
-                "monto": 8333.33,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-09-16",
-                "cuota_n": 2,
-                "monto": 8333.33,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-01",
-                "cuota_n": 3,
-                "monto": 8333.33,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-16",
-                "cuota_n": 4,
-                "monto": 8333.33,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-10-31",
-                "cuota_n": 5,
-                "monto": 8333.33,
                 "cobrado": false,
                 "fecha_cobro_real": null
             },
             {
                 "fecha": "2026-11-15",
-                "cuota_n": 6,
-                "monto": 8333.33,
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-11-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-15",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2026-12-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-01-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-02-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-15",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-03-30",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-04-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-14",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-05-29",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-06-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-13",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-07-28",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-12",
+                "cobrado": false,
+                "fecha_cobro_real": null
+            },
+            {
+                "fecha": "2027-08-27",
                 "cobrado": false,
                 "fecha_cobro_real": null
             }

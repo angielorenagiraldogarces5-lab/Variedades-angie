@@ -115,7 +115,7 @@
                         <span class="badge" style="background:{% if r.tipo == 'proximo' %}#e6a700{% elif r.tipo == 'hoy' %}#2e7d32{% elif r.tipo == 'vencida' %}#c2185b{% else %}#7b1fa2{% endif %}; color:#fff;">
                             {% if r.tipo == 'proximo' %}Próximo{% elif r.tipo == 'hoy' %}Hoy{% elif r.tipo == 'vencida' %}Vencida{% else %}Moroso{% endif %}
                         </span>
-                        <span class="small text-muted">FID{{ r.fiado[-4:] }} · Cuota {{ r.cuota }}</span>
+                        <span class="small text-muted">FID{{ r.fiado[-4:] }} · {{ r.frecuencia }}</span>
                     </div>
                     <div class="small text-muted mb-1">
                         Vence: {{ r.fecha_limite }} · 

@@ -100,9 +100,9 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Fecha inicio cuotas</label>
+                                    <label class="form-label">Fecha inicio de cobro</label>
                                     <input type="date" name="fecha_inicio" class="form-control" value="{{ fiado.fecha_inicio or fiado.fecha }}">
-                                    <div class="small text-muted mt-1">Al cambiar esto se recalculan las fechas de las cuotas no pagadas.</div>
+                                    <div class="small text-muted mt-1">Al cambiar esto se recalculan las fechas de cobro pendientes.</div>
                                 </div>
                             </div>
 
@@ -142,15 +142,15 @@
                             <div class="fw-bold fs-5" style="color:#d81b60;">{{ fiado.total|money }}</div>
                         </div>
                         <div class="mb-3">
-                            <div class="small text-muted">Cuotas / Cantidad</div>
-                            <div>{{ fiado.frecuencia }} · {{ fiado.n_cuotas }} cuotas</div>
+                            <div class="small text-muted">Frecuencia</div>
+                            <div>{{ fiado.frecuencia }}</div>
                         </div>
                         <div class="mb-3">
                             <div class="small text-muted">Saldo pendiente</div>
                             <div class="fw-bold" style="color:#b26a00;">{{ fiado.saldo_pendiente|money }}</div>
                         </div>
                         <div class="small text-muted mt-3">
-                            <i class="fas fa-info-circle me-1"></i>Para modificar montos o cantidad de cuotas, usá la reestructuración.
+                            <i class="fas fa-info-circle me-1"></i>Para modificar montos o frecuencia, usá la reestructuración.
                         </div>
                     </div>
                 </div>

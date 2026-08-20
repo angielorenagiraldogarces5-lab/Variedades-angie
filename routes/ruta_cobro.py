@@ -25,26 +25,24 @@ def _ruta_para_fecha(fiados, fecha_obj):
         if f.get("estado") == "Pagado":
             continue
         cliente = f.get("cliente", {})
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
+        saldo_fiado = round(float(f.get("saldo_pendiente", 0)), 2)
+        if saldo_fiado <= 0:
+            continue
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-            if not fecha_limite or fecha_limite != fecha_obj:
-                continue
-            saldo = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
-            if saldo <= 0:
+            fecha = _parsear_fecha(fr.get("fecha"))
+            if not fecha or fecha != fecha_obj:
                 continue
             ruta.append({
                 "fiado": numero,
-                "cuota": c.get("n"),
-                "total_cuotas": f.get("n_cuotas", 0),
                 "cliente": cliente.get("nombre", "Sin nombre"),
                 "telefono": cliente.get("telefono", ""),
                 "telefono_wa": numero_whatsapp(cliente.get("telefono", "")) if cliente.get("telefono") else None,
                 "direccion": cliente.get("direccion", ""),
-                "monto": saldo,
+                "monto": saldo_fiado,
                 "frecuencia": f.get("frecuencia", ""),
-                "vencida": fecha_limite < date.today(),
+                "vencida": fecha < date.today(),
             })
     return sorted(ruta, key=lambda r: r["cliente"])
 

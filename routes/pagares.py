@@ -12,9 +12,9 @@ def _logueado():
 
 def _vencimiento_por_cuotas(fiado):
     fechas = [
-        c.get("fecha_limite", "")
-        for c in fiado.get("cuotas", [])
-        if c.get("fecha_limite")
+        fr.get("fecha", "")
+        for fr in fiado.get("fechas_ruta", [])
+        if fr.get("fecha")
     ]
     return max(fechas) if fechas else ""
 

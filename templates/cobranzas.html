@@ -284,11 +284,11 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="cal-cobro-monto">{{ item.monto|money }}</span>
                                     <span class="cal-cobro-info">
-                                        {% if item.tipo == 'ruta_manual' %}
-                                            <i class="fas fa-walking"></i> {{ item.ruta_numero }}
-                                        {% else %}
-                                            FID{{ item.fiado[-4:] }} C{{ item.cuota }}
-                                        {% endif %}
+                                         {% if item.tipo == 'ruta_manual' %}
+                                             <i class="fas fa-walking"></i> {{ item.ruta_numero }}
+                                         {% else %}
+                                             FID{{ item.fiado[-4:] }} · {{ item.frecuencia }}
+                                         {% endif %}
                                     </span>
                                 </div>
                                 {% if item.cobrador %}
@@ -322,7 +322,7 @@
                             {% if item.tipo == 'ruta_manual' %}
                                 <span class="text-muted ms-1">· {{ item.ruta_numero }} · {{ item.ruta_nombre }}</span>
                             {% else %}
-                                <span class="text-muted ms-1">· FID{{ item.fiado[-4:] }} · Cuota {{ item.cuota }}</span>
+                                <span class="text-muted ms-1">· FID{{ item.fiado[-4:] }} · {{ item.frecuencia }}</span>
                             {% endif %}
                             {% if item.cobrador %}
                                 <span class="badge ms-1" style="background:#e8eaf6; color:#5c6bc0;"><i class="fas fa-user-tie me-1"></i>{{ item.cobrador }}</span>

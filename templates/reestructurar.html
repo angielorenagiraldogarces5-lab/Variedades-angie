@@ -62,7 +62,7 @@
             <div class="row g-2">
                 <div class="col-md-3"><div class="small text-muted">Saldo actual</div><div class="fw-bold fs-5" style="color:#c2185b;">{{ fiado.saldo_pendiente|money }}</div></div>
                 <div class="col-md-3"><div class="small text-muted">Cliente</div><div class="fw-bold">{{ fiado.cliente.nombre }}</div></div>
-                <div class="col-md-3"><div class="small text-muted">Cuotas originales</div><div class="fw-bold">{{ fiado.n_cuotas }} {{ fiado.frecuencia }}</div></div>
+                <div class="col-md-3"><div class="small text-muted">Frecuencia actual</div><div class="fw-bold">{{ fiado.frecuencia }}</div></div>
                 <div class="col-md-3"><div class="small text-muted">Estado actual</div><div class="fw-bold" style="color:#c2185b;">Pendiente</div></div>
             </div>
         </div>
@@ -84,12 +84,6 @@
                         <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_hoy }}" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Número de cuotas</label>
-                        <input type="number" name="n_cuotas" id="nCuotas" class="form-control" min="1" value="4" oninput="actualizarResumen()">
-                    </div>
-                </div>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
                         <label class="form-label">Frecuencia</label>
                         <select name="frecuencia" class="form-select" id="frecuencia" onchange="actualizarResumen()">
                             {% for f in frecuencias %}
@@ -103,8 +97,8 @@
                     <div>
                         <div class="small text-white-50">MONTO A REESTRUCTURAR</div>
                         <div class="small text-white-50" id="montoResumen">{{ fiado.saldo_pendiente|money }}</div>
-                        <div class="small text-white-50 mt-1">CUOTA NUEVA</div>
-                        <div class="fw-bold fs-3" id="cuotaDisplay">{{ 0|money }}</div>
+                        <div class="small text-white-50 mt-1">SE GENERARÁN FECHAS DE COBRO</div>
+                        <div class="small text-white-50">Según frecuencia elegida (1 año de fechas)</div>
                     </div>
                     <button type="submit" class="btn btn-light fw-bold px-4 py-2" style="color:#d81b60;">
                         <i class="fas fa-redo me-2"></i>Reestructurar
@@ -121,11 +115,8 @@
 
         function actualizarResumen() {
             var pagoInicial = parseFloat(document.getElementById('pagoInicial').value) || 0;
-            var n = parseInt(document.getElementById('nCuotas').value) || 1;
             var monto = Math.max(0, saldoPendiente - pagoInicial);
-            var cuota = monto / n;
             document.getElementById('montoResumen').textContent = formatearMoneda(monto);
-            document.getElementById('cuotaDisplay').textContent = formatearMoneda(cuota);
         }
 
         actualizarResumen();

@@ -131,16 +131,11 @@
                     <div class="col-md-3">
                         <label class="form-label">Total de la venta *</label>
                         <input type="number" name="total" id="totalVenta" class="form-control" min="0" step="0.01"
-                               placeholder="0" required oninput="calcularCuota()">
+                               placeholder="0" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Fecha de venta</label>
                         <input type="date" name="fecha_venta" class="form-control" value="{{ fecha_hoy }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Cuotas</label>
-                        <input type="number" name="n_cuotas" id="nCuotas" class="form-control" min="1" value="6"
-                               oninput="calcularCuota()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Frecuencia</label>
@@ -151,15 +146,9 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Cuota estimada</label>
-                        <div class="form-control bg-white" id="cuotaEstimada" style="border-color:#ff6bb3; color:#d81b60; font-weight:700;">
-                            $ 0
-                        </div>
-                    </div>
-                    <div class="col-md-3">
                         <label class="form-label">Seña (si ya pagó algo)</label>
                         <input type="number" name="senia" id="senia" class="form-control" min="0" step="0.01"
-                               placeholder="0" oninput="calcularCuota()">
+                               placeholder="0">
                     </div>
                 </div>
             </div>
@@ -199,16 +188,6 @@
     <script>
         var abonoIdx = 0;
 
-        function calcularCuota() {
-            var total = parseFloat(document.getElementById('totalVenta').value) || 0;
-            var n = parseInt(document.getElementById('nCuotas').value) || 1;
-            var senia = parseFloat(document.getElementById('senia').value) || 0;
-            var reste = total - senia;
-            if (reste < 0) reste = 0;
-            var cuota = reste / n;
-            document.getElementById('cuotaEstimada').textContent = formatearMoneda(cuota);
-        }
-
         function agregarAbono() {
             var container = document.getElementById('abonosContainer');
             var div = document.createElement('div');
@@ -239,7 +218,6 @@
             if (el) el.remove();
         }
 
-        calcularCuota();
     </script>
 </body>
 </html>

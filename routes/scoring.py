@@ -21,8 +21,9 @@ def calcular_score(cliente, cliente_id=None):
     total_fiados = 0
     fiados_pagados = 0
     fiados_con_mora = 0
-    cuotas_vencidas = 0
+    fechas_vencidas = 0
     saldo_total = 0.0
+    hoy = date.today()
 
     for f in fiados.values():
         if str(f.get("cliente", {}).get("id", "")) != str(cid):
@@ -32,14 +33,14 @@ def calcular_score(cliente, cliente_id=None):
             fiados_pagados += 1
         else:
             saldo_total += float(f.get("saldo_pendiente", 0))
-            for c in f.get("cuotas", []):
-                if c.get("estado") == "Pagada":
+            for fr in f.get("fechas_ruta", []):
+                if fr.get("cobrado"):
                     continue
-                fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-                if fecha_limite and fecha_limite < date.today():
-                    cuotas_vencidas += 1
+                fecha_limite = _parsear_fecha(fr.get("fecha"))
+                if fecha_limite and fecha_limite < hoy:
+                    fechas_vencidas += 1
 
-    if cuotas_vencidas > 0:
+    if fechas_vencidas > 0:
         fiados_con_mora = 1
 
     limite = float(cliente.get("limite_credito", 0))
@@ -54,7 +55,7 @@ def calcular_score(cliente, cliente_id=None):
         return {
             "score": 0,
             "detalle": _detalle_score(0, total_fiados, fiados_pagados, fiados_con_mora,
-                                      cuotas_vencidas, limite, credito_usado, moroso, telefono),
+                                      fechas_vencidas, limite, credito_usado, moroso, telefono),
             "estado": "Rechazado",
             "razon": "El cliente está marcado como moroso.",
         }
@@ -70,7 +71,7 @@ def calcular_score(cliente, cliente_id=None):
     if telefono:
         score += 5
 
-    if cuotas_vencidas > 0:
+    if fechas_vencidas > 0:
         score -= 20
     if limite > 0 and credito_usado / limite > 0.8:
         score -= 15
@@ -92,13 +93,13 @@ def calcular_score(cliente, cliente_id=None):
     return {
         "score": score,
         "detalle": _detalle_score(score, total_fiados, fiados_pagados, fiados_con_mora,
-                                  cuotas_vencidas, limite, credito_usado, moroso, telefono),
+                                  fechas_vencidas, limite, credito_usado, moroso, telefono),
         "estado": estado,
         "razon": razon,
         "total_fiados": total_fiados,
         "fiados_pagados": fiados_pagados,
         "fiados_con_mora": fiados_con_mora,
-        "cuotas_vencidas": cuotas_vencidas,
+        "cuotas_vencidas": fechas_vencidas,
         "saldo_total": round(saldo_total, 2),
     }
 
@@ -111,9 +112,9 @@ def _detalle_score(score, total, pagados, mora, vencidas, limite, usado, moroso,
         return detalles
 
     if mora == 0 and total > 0:
-        detalles.append(("Positivo", "Sin cuotas vencidas actualmente", "+15"))
+        detalles.append(("Positivo", "Sin fechas vencidas actualmente", "+15"))
     elif mora > 0:
-        detalles.append(("Negativo", f"{vencidas} cuota(s) vencida(s)", "-20"))
+        detalles.append(("Negativo", f"{vencidas} fecha(s) vencida(s)", "-20"))
 
     if total > 0 and pagados / total > 0.8:
         detalles.append(("Positivo", f"{pagados}/{total} fiados pagados (>80%)", "+10"))
@@ -186,10 +187,10 @@ def calcular_morosidad(cliente_id, fiados=None):
             continue
         if f.get("estado") == "Pagado":
             continue
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
+            fecha_limite = _parsear_fecha(fr.get("fecha"))
             if fecha_limite and (hoy - fecha_limite).days > 30:
                 return True
     return False

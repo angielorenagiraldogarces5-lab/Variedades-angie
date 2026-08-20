@@ -55,7 +55,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
                 <h2 class="page-title mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Fiado Digital</h2>
-                <p class="page-subtitle mb-0">El cliente lleva el producto y abona poco a poco en cuotas.</p>
+                <p class="page-subtitle mb-0">El cliente lleva el producto y abona poco a poco.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <a href="/importar-cobros" class="btn btn-outline-purple px-3 py-2">
@@ -148,7 +148,7 @@
             <div class="col-md-6">
                 <div class="card alert-card card-vencida p-3 h-100">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold" style="color:#c2185b;"><i class="fas fa-exclamation-triangle me-2"></i>Cuotas vencidas</span>
+                        <span class="fw-bold" style="color:#c2185b;"><i class="fas fa-exclamation-triangle me-2"></i>Fechas vencidas</span>
                         <span class="badge bg-danger">{{ vencidas|length }}</span>
                     </div>
                     {% if vencidas %}
@@ -158,13 +158,13 @@
                                 <a href="/fiados/{{ a.fiado }}/tarjeta" class="text-decoration-none" style="color:#c2185b;" target="_blank">
                                     <b>{{ a.fiado }}</b>
                                 </a>
-                                <span class="text-muted">{{ a.cliente }} · Cuota {{ a.cuota }}</span>
+                                <span class="text-muted">{{ a.cliente }}</span>
                                 <span class="fw-bold" style="color:#c2185b;">{{ a.monto|money }} · {{ a.dias }}d</span>
                             </li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="text-muted small mb-0"><i class="fas fa-check-circle me-1" style="color:#2e7d32;"></i>Sin cuotas vencidas. ¡Todo al día!</p>
+                        <p class="text-muted small mb-0"><i class="fas fa-check-circle me-1" style="color:#2e7d32;"></i>Sin fechas vencidas. ¡Todo al día!</p>
                     {% endif %}
                 </div>
             </div>
@@ -181,7 +181,7 @@
                                 <a href="/fiados/{{ a.fiado }}/tarjeta" class="text-decoration-none" style="color:#b26a00;" target="_blank">
                                     <b>{{ a.fiado }}</b>
                                 </a>
-                                <span class="text-muted">{{ a.cliente }} · Cuota {{ a.cuota }}</span>
+                                <span class="text-muted">{{ a.cliente }}</span>
                                 <span class="fw-bold" style="color:#b26a00;">{{ a.monto|money }} · en {{ a.dias }}d</span>
                             </li>
                             {% endfor %}
@@ -244,10 +244,6 @@
                         <span class="text-muted">Saldo pendiente</span>
                         <b style="color:#b26a00;">{{ r.saldo|money }}</b>
                     </div>
-                    <div class="d-flex justify-content-between small">
-                        <span class="text-muted">Cuotas por pagar</span>
-                        <b>{{ r.cuotas_pendientes }}</b>
-                    </div>
                 </div>
             </div>
             {% else %}
@@ -269,7 +265,7 @@
                             <th>Cliente</th>
                             <th>Comprobante</th>
                             <th>Productos</th>
-                            <th>Cuotas</th>
+                            <th>Frecuencia</th>
                             <th>Total</th>
                             <th>Pagado</th>
                             <th>Saldo</th>
@@ -287,7 +283,7 @@
                             <td>{{ f.cliente.nombre }}</td>
                             <td><a href="/facturas/{{ f.factura_origen }}" class="text-decoration-none" style="color:#ff6bb3;">{{ f.factura_origen }}</a></td>
                             <td>{% set ns = namespace(cant=0) %}{% for item in f["items"] %}{% set ns.cant = ns.cant + item.cantidad %}{% endfor %}{{ ns.cant }}</td>
-                            <td>{{ f.n_cuotas }}</td>
+                            <td>{{ f.frecuencia }}</td>
                             <td class="fw-bold">{{ f.total|money }}</td>
                             <td>{{ f.total_pagado|money }}</td>
                             <td class="fw-bold">{{ f.saldo_pendiente|money }}</td>

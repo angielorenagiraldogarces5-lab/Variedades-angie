@@ -28,11 +28,11 @@
         .badge-pagada { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; }
         .badge-pendiente { background: #fff4e5; color: #b26a00; border: 1px solid #ffc566; }
         .thead-purple { background: #ff6bb3; color: #fff; }
-        .cuota-pagada { background: #f3fdf3 !important; }
         .badge-aprobado { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; }
         .badge-rechazado { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; }
         .badge-revision { background: #fff4e5; color: #b26a00; border: 1px solid #ffc566; }
-        .badge-moroso { background: #c2185b; color: #fff; }
+        .ruta-fecha { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #ffe3ef; font-size: 13px; }
+        .ruta-fecha:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -123,8 +123,8 @@
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
                     <div class="stat-icon me-3" style="background:#dbeafe; color:#1d4ed8;"><i class="fas fa-calendar-alt"></i></div>
                     <div>
-                        <div class="text-muted small">Cuotas · Frecuencia</div>
-                        <div class="fw-bold fs-4" style="color:#1d4ed8;">{{ fiado.n_cuotas }} · {{ fiado.frecuencia }}</div>
+                        <div class="text-muted small">Frecuencia</div>
+                        <div class="fw-bold fs-4" style="color:#1d4ed8;">{{ fiado.frecuencia }}</div>
                     </div>
                 </div>
             </div>
@@ -192,40 +192,34 @@
 
         <div class="card card-form mb-4">
             <div class="card-header py-3 px-4">
-                <i class="fas fa-list-ol me-2"></i>Plan de cuotas
+                <i class="fas fa-calendar-alt me-2"></i>Fechas de cobro
             </div>
             <div class="card-body p-4">
-                <div class="table-responsive">
-                    <table class="table table-bordered mb-0">
-                        <thead class="thead-purple">
-                            <tr>
-                                <th class="py-2">N°</th>
-                                <th class="py-2">Fecha límite</th>
-                                <th class="text-end py-2">Cuota</th>
-                                <th class="text-end py-2">Abonado</th>
-                                <th class="text-end py-2">Saldo</th>
-                                <th class="text-center py-2">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in fiado.cuotas %}
-                            <tr class="{% if c.estado == 'Pagada' %}cuota-pagada{% endif %}">
-                                <td class="fw-bold">Cuota {{ c.n }}</td>
-                                <td>{{ c.fecha_limite }}{% if c.fecha_pago %} <span class="text-muted small">(pagada el {{ c.fecha_pago }})</span>{% endif %}</td>
-                                <td class="text-end">{{ c.monto|money }}</td>
-                                <td class="text-end">{{ c.monto_abonado|money }}</td>
-                                <td class="text-end">{{ (c.monto - c.monto_abonado)|money }}</td>
-                                <td class="text-center">
-                                    {% if c.estado == 'Pagada' %}
-                                        <span class="badge badge-pagada"><i class="fas fa-check me-1"></i>Pagada</span>
-                                    {% else %}
-                                        <span class="badge badge-pendiente"><i class="fas fa-clock me-1"></i>Pendiente</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                {% set fechas_pendientes = fiado.fechas_ruta|selectattr('cobrado', 'equalto', false)|list %}
+                {% set fechas_cobradas = fiado.fechas_ruta|selectattr('cobrado', 'equalto', true)|list %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="small">
+                        <span class="text-muted">Pendientes: <b>{{ fechas_pendientes|length }}</b></span>
+                        <span class="text-muted ms-3">Cobradas: <b>{{ fechas_cobradas|length }}</b></span>
+                    </div>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    {% for fr in fiado.fechas_ruta %}
+                    <div class="ruta-fecha" style="{% if fr.cobrado %}opacity: 0.6;{% endif %}">
+                        <div>
+                            <span class="fw-bold" style="color:#d81b60;">{{ fr.fecha }}</span>
+                            {% if fr.cobrado %}
+                                <span class="badge badge-pagada ms-2"><i class="fas fa-check me-1"></i>Cobrada</span>
+                                {% if fr.fecha_cobro_real %}
+                                    <span class="small text-muted ms-1">(cobrada el {{ fr.fecha_cobro_real }})</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-pendiente ms-2"><i class="fas fa-clock me-1"></i>Pendiente</span>
+                                {% set fecha_obj = fr.fecha|to_date if fr.fecha is defined else none %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -257,13 +251,8 @@
                     </div>
                 </form>
                 <div class="mt-3">
-                    <div class="small text-muted mb-1">Pagos rápidos:</div>
+                    <div class="small text-muted mb-1">Pago rápido:</div>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for c in fiado.cuotas if c.estado != 'Pagada' %}
-                        <button type="button" class="btn btn-outline-purple btn-sm" onclick="abonoRapido({{ c.monto - c.monto_abonado }})">
-                            Cuota {{ c.n }} · {{ (c.monto - c.monto_abonado)|money }}
-                        </button>
-                        {% endfor %}
                         <button type="button" class="btn btn-success btn-sm" onclick="abonoRapido({{ fiado.saldo_pendiente }})">
                             Saldar todo · {{ fiado.saldo_pendiente|money }}
                         </button>

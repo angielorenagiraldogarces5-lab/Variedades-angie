@@ -26,30 +26,30 @@ def _alertas_vencimiento(fiados, dias_proximas=7):
         if f.get("estado") == "Pagado":
             continue
         cliente = f.get("cliente", {}).get("nombre", "Sin nombre")
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
+        saldo_fiado = round(float(f.get("saldo_pendiente", 0)), 2)
+        if saldo_fiado <= 0:
+            continue
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-            if not fecha_limite:
+            fecha = _parsear_fecha(fr.get("fecha"))
+            if not fecha:
                 continue
-            saldo_cuota = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
-            dias = (fecha_limite - hoy).days
+            dias = (fecha - hoy).days
             if dias < 0:
                 vencidas.append({
                     "fiado": numero,
-                    "cuota": c.get("n"),
                     "cliente": cliente,
-                    "monto": saldo_cuota,
-                    "fecha_limite": c.get("fecha_limite"),
+                    "monto": saldo_fiado,
+                    "fecha_limite": fr.get("fecha"),
                     "dias": -dias,
                 })
             elif dias <= dias_proximas:
                 proximas.append({
                     "fiado": numero,
-                    "cuota": c.get("n"),
                     "cliente": cliente,
-                    "monto": saldo_cuota,
-                    "fecha_limite": c.get("fecha_limite"),
+                    "monto": saldo_fiado,
+                    "fecha_limite": fr.get("fecha"),
                     "dias": dias,
                 })
     vencidas.sort(key=lambda a: a["dias"], reverse=True)
@@ -63,14 +63,11 @@ def _resumen_por_cliente(fiados):
         nombre = f.get("cliente", {}).get("nombre", "Sin nombre")
         r = resumen.setdefault(
             nombre,
-            {"nombre": nombre, "fiados": 0, "total": 0.0, "saldo": 0.0, "cuotas_pendientes": 0},
+            {"nombre": nombre, "fiados": 0, "total": 0.0, "saldo": 0.0},
         )
         r["fiados"] += 1
         r["total"] = round(r["total"] + float(f.get("total", 0)), 2)
         r["saldo"] = round(r["saldo"] + float(f.get("saldo_pendiente", 0)), 2)
-        for c in f.get("cuotas", []):
-            if c.get("estado") != "Pagada":
-                r["cuotas_pendientes"] += 1
     return sorted(resumen.values(), key=lambda r: r["saldo"], reverse=True)
 
 
@@ -188,13 +185,6 @@ def crear():
         flash("Ese comprobante ya tiene un fiado registrado.", "danger")
         return redirect(url_for("fiados.nuevo"))
 
-    try:
-        n_cuotas = int(request.form.get("n_cuotas", 1) or 1)
-    except ValueError:
-        n_cuotas = 1
-    if n_cuotas < 1:
-        n_cuotas = 1
-
     frecuencia = request.form.get("frecuencia", "Semanal")
     if frecuencia not in fiados_store.FRECUENCIAS:
         frecuencia = "Semanal"
@@ -235,7 +225,6 @@ def crear():
     numero = fiados_store.crear_fiado(
         fecha,
         factura,
-        n_cuotas,
         frecuencia,
         fecha_inicio,
         session.get("nombre"),
@@ -394,13 +383,6 @@ def reestructurar(numero):
             fecha_hoy=ahora().strftime("%Y-%m-%d"),
         )
 
-    try:
-        n_cuotas = int(request.form.get("n_cuotas", 4) or 4)
-    except ValueError:
-        n_cuotas = 4
-    if n_cuotas < 1:
-        n_cuotas = 1
-
     frecuencia = request.form.get("frecuencia", "Semanal")
     if frecuencia not in fiados_store.FRECUENCIAS:
         frecuencia = "Semanal"
@@ -418,7 +400,7 @@ def reestructurar(numero):
         flash("El pago inicial cubre toda la deuda. No hay nada que reestructurar.", "danger")
         return redirect(url_for("fiados.ver", numero=numero))
 
-    factura = facturas_store.load_facturas().get(fiado.get("factura_origen"))
+    factura = facturas_store.load_fiados().get(fiado.get("factura_origen"))
     if not factura:
         factura = {
             "numero": fiado.get("factura_origen", ""),
@@ -433,7 +415,6 @@ def reestructurar(numero):
     nuevo_numero = fiados_store.crear_fiado(
         fecha=ahora().strftime("%Y-%m-%d"),
         factura=factura,
-        n_cuotas=n_cuotas,
         frecuencia=frecuencia,
         fecha_inicio=fecha_inicio,
         vendedor=session.get("nombre"),

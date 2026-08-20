@@ -29,7 +29,6 @@ def _dias_semana_largo():
 
 
 def _generar_calendario(anio, mes):
-    """Genera la grilla del mes con días y空 slots."""
     _, dias_mes = calendar.monthrange(anio, mes)
     primer_dia = date(anio, mes, 1).weekday()
     celdas = [None] * primer_dia
@@ -41,7 +40,6 @@ def _generar_calendario(anio, mes):
 
 
 def _cobros_por_dia(fiados, anio, mes):
-    """Recorre las cuotas pendientes y las agrupa por fecha límite dentro del mes."""
     hoy = date.today()
     por_dia = defaultdict(list)
     for numero, f in fiados.items():
@@ -49,32 +47,30 @@ def _cobros_por_dia(fiados, anio, mes):
             continue
         cliente = f.get("cliente", {}).get("nombre", "Sin nombre")
         cliente_tel = f.get("cliente", {}).get("telefono", "")
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-            if not fecha_limite:
+            fecha = _parsear_fecha(fr.get("fecha"))
+            if not fecha:
                 continue
-            if fecha_limite.year == anio and fecha_limite.month == mes:
-                saldo = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
+            if fecha.year == anio and fecha.month == mes:
+                saldo = round(float(f.get("saldo_pendiente", 0)), 2)
                 if saldo <= 0:
                     continue
-                por_dia[fecha_limite.day].append({
+                por_dia[fecha.day].append({
                     "fiado": numero,
-                    "cuota": c.get("n"),
                     "cliente": cliente,
                     "telefono": cliente_tel,
                     "monto": saldo,
-                    "fecha_limite": fecha_limite,
-                    "vencida": fecha_limite < hoy,
-                    "hoy": fecha_limite == hoy,
+                    "fecha": fecha,
+                    "vencida": fecha < hoy,
+                    "hoy": fecha == hoy,
                     "frecuencia": f.get("frecuencia", ""),
                 })
     return dict(por_dia)
 
 
 def _proximo_pago(fecha_inicio_str, frecuencia, hoy):
-    """Calcula la próxima fecha de pago a partir de hoy."""
     inicio = _parsear_fecha(fecha_inicio_str)
     if not inicio:
         return None
@@ -181,29 +177,37 @@ def _deuda_envejecida(fiados):
         nombre = f.get("cliente", {}).get("nombre", "Sin nombre")
         telefono = f.get("cliente", {}).get("telefono", "")
         direccion = f.get("cliente", {}).get("direccion", "")
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
+        saldo_fiado = round(float(f.get("saldo_pendiente", 0)), 2)
+        if saldo_fiado <= 0:
+            continue
+
+        fecha_mas_antigua = None
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-            if not fecha_limite:
-                continue
-            saldo = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
-            if saldo <= 0:
-                continue
-            dias = (hoy - fecha_limite).days
-            if dias <= 0:
-                continue
-            rango = "30" if dias <= 30 else ("60" if dias <= 60 else ("90" if dias <= 90 else "90+"))
-            cl = clientes.setdefault(cid, {
-                "id": cid, "nombre": nombre, "telefono": telefono, "direccion": direccion,
-                "deuda_total": 0.0, "items": [], "max_dias": 0,
-            })
-            cl["deuda_total"] = round(cl["deuda_total"] + saldo, 2)
-            cl["items"].append({
-                "fiado": numero, "cuota": c.get("n"), "monto": saldo,
-                "fecha_limite": c.get("fecha_limite"), "dias": dias, "rango": rango,
-            })
-            cl["max_dias"] = max(cl["max_dias"], dias)
+            fecha = _parsear_fecha(fr.get("fecha"))
+            if fecha and (not fecha_mas_antigua or fecha < fecha_mas_antigua):
+                fecha_mas_antigua = fecha
+
+        if not fecha_mas_antigua:
+            continue
+
+        dias = (hoy - fecha_mas_antigua).days
+        if dias <= 0:
+            continue
+
+        rango = "30" if dias <= 30 else ("60" if dias <= 60 else ("90" if dias <= 90 else "90+"))
+        cl = clientes.setdefault(cid, {
+            "id": cid, "nombre": nombre, "telefono": telefono, "direccion": direccion,
+            "deuda_total": 0.0, "items": [], "max_dias": 0,
+        })
+        cl["deuda_total"] = round(cl["deuda_total"] + saldo_fiado, 2)
+        cl["items"].append({
+            "fiado": numero, "monto": saldo_fiado,
+            "fecha_limite": fecha_mas_antigua.isoformat(), "dias": dias, "rango": rango,
+            "frecuencia": f.get("frecuencia", ""),
+        })
+        cl["max_dias"] = max(cl["max_dias"], dias)
     return sorted(clientes.values(), key=lambda c: c["max_dias"], reverse=True)
 
 

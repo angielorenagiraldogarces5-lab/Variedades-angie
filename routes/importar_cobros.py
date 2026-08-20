@@ -77,13 +77,6 @@ def guardar():
     fecha_venta = request.form.get("fecha_venta", "").strip() or ahora().strftime("%Y-%m-%d")
     vendedor = request.form.get("vendedor", "").strip()
 
-    try:
-        n_cuotas = int(request.form.get("n_cuotas", 6) or 6)
-    except ValueError:
-        n_cuotas = 6
-    if n_cuotas < 1:
-        n_cuotas = 6
-
     frecuencia = request.form.get("frecuencia", "Quincenal")
     if frecuencia not in fiados_store.FRECUENCIAS:
         frecuencia = "Quincenal"
@@ -137,7 +130,6 @@ def guardar():
     numero_fiado = fiados_store.crear_fiado(
         fecha=fecha_venta,
         factura=factura,
-        n_cuotas=n_cuotas,
         frecuencia=frecuencia,
         fecha_inicio=fecha_venta,
         vendedor=vendedor,

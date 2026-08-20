@@ -28,59 +28,64 @@ def _generar_recordatorios(fiados):
         cliente = f.get("cliente", {})
         nombre = cliente.get("nombre", "Sin nombre")
         telefono = cliente.get("telefono", "")
-        for c in f.get("cuotas", []):
-            if c.get("estado") == "Pagada":
-                continue
-            fecha_limite = _parsear_fecha(c.get("fecha_limite"))
-            if not fecha_limite:
-                continue
-            saldo = round(float(c.get("monto", 0)) - float(c.get("monto_abonado", 0)), 2)
-            if saldo <= 0:
-                continue
-            dias = (hoy - fecha_limite).days
+        saldo_total = round(float(f.get("saldo_pendiente", 0)), 2)
+        if saldo_total <= 0:
+            continue
 
-            if dias < -2:
+        fecha_mas_cercana = None
+        for fr in f.get("fechas_ruta", []):
+            if fr.get("cobrado"):
                 continue
-            elif dias < 0:
-                tipo = "proximo"
-                mensaje = (
-                    f"Hola {nombre}, te recordamos que tu cuota N°{c.get('n')} "
-                    f"de ${saldo:,.0f} vence el {fecha_limite.strftime('%d/%m')}. "
-                    f"¡Gracias por tu compra en Variedades Angie!"
-                )
-            elif dias == 0:
-                tipo = "hoy"
-                mensaje = (
-                    f"Hola {nombre}, tu cuota N°{c.get('n')} de ${saldo:,.0f} "
-                    f"vence hoy. ¡No te olvides de abonar! Variedades Angie."
-                )
-            elif dias <= 30:
-                tipo = "vencida"
-                mensaje = (
-                    f"Hola {nombre}, tu cuota N°{c.get('n')} de ${saldo:,.0f} "
-                    f"está vencida desde hace {dias} días. Por favor, acercate a abonar. "
-                    f"Variedades Angie."
-                )
-            else:
-                tipo = "moroso"
-                mensaje = (
-                    f"Hola {nombre}, tenemos registro de una deuda pendiente de "
-                    f"${saldo:,.0f} desde hace {dias} días. Es importante que nos "
-                    f"contactes para encontrar una solución. Variedades Angie."
-                )
+            fecha = _parsear_fecha(fr.get("fecha"))
+            if fecha and (not fecha_mas_cercana or fecha < fecha_mas_cercana):
+                fecha_mas_cercana = fecha
 
-            recordatorios.append({
-                "fiado": numero,
-                "cuota": c.get("n"),
-                "cliente": nombre,
-                "telefono": telefono,
-                "telefono_wa": numero_whatsapp(telefono) if telefono else None,
-                "monto": saldo,
-                "fecha_limite": c.get("fecha_limite"),
-                "dias": dias,
-                "tipo": tipo,
-                "mensaje": mensaje,
-            })
+        if not fecha_mas_cercana:
+            continue
+
+        dias = (hoy - fecha_mas_cercana).days
+
+        if dias < -2:
+            continue
+        elif dias < 0:
+            tipo = "proximo"
+            mensaje = (
+                f"Hola {nombre}, te recordamos que tu pago de "
+                f"${saldo_total:,.0f} vence el {fecha_mas_cercana.strftime('%d/%m')}. "
+                f"¡Gracias por tu compra en Variedades Angie!"
+            )
+        elif dias == 0:
+            tipo = "hoy"
+            mensaje = (
+                f"Hola {nombre}, tu pago de ${saldo_total:,.0f} "
+                f"vence hoy. ¡No te olvides de abonar! Variedades Angie."
+            )
+        elif dias <= 30:
+            tipo = "vencida"
+            mensaje = (
+                f"Hola {nombre}, tu pago de ${saldo_total:,.0f} "
+                f"está vencida desde hace {dias} días. Por favor, acercate a abonar. "
+                f"Variedades Angie."
+            )
+        else:
+            tipo = "moroso"
+            mensaje = (
+                f"Hola {nombre}, tenemos registro de una deuda pendiente de "
+                f"${saldo_total:,.0f} desde hace {dias} días. Es importante que nos "
+                f"contactes para encontrar una solución. Variedades Angie."
+            )
+
+        recordatorios.append({
+            "fiado": numero,
+            "cliente": nombre,
+            "telefono": telefono,
+            "telefono_wa": numero_whatsapp(telefono) if telefono else None,
+            "monto": saldo_total,
+            "fecha_limite": fecha_mas_cercana.isoformat(),
+            "dias": dias,
+            "tipo": tipo,
+            "mensaje": mensaje,
+        })
 
     recordatorios.sort(key=lambda r: (-r["dias"]))
     return recordatorios
