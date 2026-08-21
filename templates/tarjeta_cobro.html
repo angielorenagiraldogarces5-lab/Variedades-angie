@@ -350,11 +350,15 @@
                 <div class="resumen-box">
                     <div>
                         <div class="res-label">TOTAL A PAGAR</div>
-                        <div class="res-valor">{{ fiado.total|money }}</div>
+                        <div class="res-valor">{{ cuentas.total|money }}</div>
+                    </div>
+                    <div>
+                        <div class="res-label">YA ABONADO</div>
+                        <div class="res-valor">{{ cuentas.total_pagado|money }}</div>
                     </div>
                     <div style="text-align:right;">
                         <div class="res-label">SALDO PENDIENTE</div>
-                        <div class="res-valor">{{ fiado.saldo_pendiente|money }}</div>
+                        <div class="res-valor">{{ cuentas.saldo_pendiente|money }}</div>
                     </div>
                 </div>
 
@@ -364,6 +368,7 @@
                         <tr>
                             <th style="width:50px;">N°</th>
                             <th>Fecha</th>
+                            <th style="width:110px;">Monto</th>
                             <th style="width:100px;">Estado</th>
                             <th style="width:120px;">Cobrada el</th>
                         </tr>
@@ -373,6 +378,7 @@
                         <tr class="{% if fr.cobrado %}fila-cobrada{% endif %}">
                             <td><span class="fecha-num">{{ loop.index }}</span></td>
                             <td class="fecha-valor">{{ fr.fecha }}</td>
+                            <td class="fecha-valor" style="font-weight:700; color:#2e7d32;">{{ cuentas.monto_cuota|money }}</td>
                             <td>
                                 {% if fr.cobrado %}
                                     <span class="fecha-estado estado-cobrada"><i class="fas fa-check me-1"></i>Cobrada</span>
@@ -394,12 +400,14 @@
                     <div class="recibo-celda recibo-header">Saldo</div>
                     <div class="recibo-celda recibo-header">Firma</div>
                 </div>
+                {% set ns = namespace(saldo=fiado.total) %}
                 {% for a in fiado.abonos %}
+                {% set ns.saldo = ns.saldo - a.monto %}
                 <div class="recibo-fila">
                     <div class="recibo-celda fecha-num">{{ a.n }}</div>
                     <div class="recibo-celda">{{ a.fecha }}</div>
                     <div class="recibo-celda" style="font-weight:700; color:#2e7d32;">{{ a.monto|money }}</div>
-                    <div class="recibo-celda" style="font-weight:700; color:#c2185b;">{{ loop.revindex0 }}</div>
+                    <div class="recibo-celda" style="font-weight:700; color:#c2185b;">{{ [ns.saldo, 0]|max|money }}</div>
                     <div class="recibo-celda" style="color:#aaa;">✓</div>
                 </div>
                 {% endfor %}

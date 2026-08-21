@@ -27,7 +27,10 @@ def _guardar_json(path, datos):
 
 
 def load_fiados():
-    return _leer_json(DATA_FILE, {})
+    fiados = _leer_json(DATA_FILE, {})
+    for f in fiados.values():
+        _recalcular_totales(f)
+    return fiados
 
 
 def save_fiados(fiados):
@@ -71,12 +74,75 @@ def _generar_fechas_ruta(inicio, frecuencia):
 
 
 def _recalcular_totales(fiado):
+    total = round(float(fiado.get("total", 0)), 2)
     total_pagado = round(
         sum(float(a.get("monto", 0)) for a in fiado.get("abonos", [])), 2
     )
+    fiado["total"] = total
     fiado["total_pagado"] = total_pagado
-    fiado["saldo_pendiente"] = round(float(fiado.get("total", 0)) - total_pagado, 2)
+    fiado["saldo_pendiente"] = round(total - total_pagado, 2)
     fiado["estado"] = "Pagado" if fiado["saldo_pendiente"] <= 0 else "Pendiente"
+
+    fechas_ruta = fiado.get("fechas_ruta", [])
+    if fechas_ruta:
+        fiado["monto_cuota"] = round(total / len(fechas_ruta), 2)
+    elif "monto_cuota" not in fiado:
+        fiado["monto_cuota"] = total
+
+
+def _parsear_fecha_store(valor):
+    try:
+        return date.fromisoformat(valor or "")
+    except (TypeError, ValueError):
+        return None
+
+
+def resumen_cuentas(fiado):
+    """Calcula automáticamente las cuentas del fiado: pagado, saldo,
+    monto por cuota, cuotas cobradas/pendientes y próxima fecha de cobro."""
+    total = round(float(fiado.get("total", 0)), 2)
+    abonos = fiado.get("abonos", [])
+    total_pagado = round(sum(float(a.get("monto", 0)) for a in abonos), 2)
+    saldo = max(round(total - total_pagado, 2), 0.0)
+
+    fechas_ruta = fiado.get("fechas_ruta", [])
+    cuotas_total = len(fechas_ruta)
+    monto_cuota = round(total / cuotas_total, 2) if cuotas_total else total
+
+    cobradas = [fr for fr in fechas_ruta if fr.get("cobrado")]
+    pendientes = [fr for fr in fechas_ruta if not fr.get("cobrado")]
+
+    hoy = date.today()
+    proxima = None
+    for fr in pendientes:
+        fecha = _parsear_fecha_store(fr.get("fecha"))
+        if fecha and fecha >= hoy:
+            proxima = {
+                "fecha": fr.get("fecha"),
+                "dias": (fecha - hoy).days,
+                "vencida": False,
+            }
+            break
+    if proxima is None and pendientes:
+        fecha = _parsear_fecha_store(pendientes[0].get("fecha"))
+        proxima = {
+            "fecha": pendientes[0].get("fecha"),
+            "dias": (hoy - fecha).days if fecha else None,
+            "vencida": True,
+        }
+
+    return {
+        "total": total,
+        "cantidad_abonos": len(abonos),
+        "total_pagado": total_pagado,
+        "saldo_pendiente": saldo,
+        "porcentaje_pagado": min(round(total_pagado * 100 / total, 1), 100.0) if total > 0 else 100.0,
+        "monto_cuota": monto_cuota,
+        "cuotas_total": cuotas_total,
+        "cuotas_cobradas": len(cobradas),
+        "cuotas_pendientes": len(pendientes),
+        "proxima_cuota": proxima,
+    }
 
 
 def crear_fiado(fecha, factura, frecuencia, fecha_inicio, vendedor,
@@ -85,6 +151,7 @@ def crear_fiado(fecha, factura, frecuencia, fecha_inicio, vendedor,
     inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
 
     fechas_ruta = _generar_fechas_ruta(inicio, frecuencia)
+    n_cuotas = len(fechas_ruta)
 
     fiado = {
         "numero": generar_numero(),
@@ -96,6 +163,7 @@ def crear_fiado(fecha, factura, frecuencia, fecha_inicio, vendedor,
         "frecuencia": frecuencia,
         "fecha_inicio": fecha_inicio,
         "fechas_ruta": fechas_ruta,
+        "monto_cuota": round(total / n_cuotas, 2) if n_cuotas else total,
         "abonos": [],
         "total_pagado": 0.0,
         "saldo_pendiente": total,

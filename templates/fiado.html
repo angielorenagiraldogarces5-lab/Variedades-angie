@@ -123,10 +123,38 @@
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
                     <div class="stat-icon me-3" style="background:#dbeafe; color:#1d4ed8;"><i class="fas fa-calendar-alt"></i></div>
                     <div>
-                        <div class="text-muted small">Frecuencia</div>
-                        <div class="fw-bold fs-4" style="color:#1d4ed8;">{{ fiado.frecuencia }}</div>
+                        <div class="text-muted small">Cuota {{ fiado.frecuencia|lower }}</div>
+                        <div class="fw-bold fs-4" style="color:#1d4ed8;">{{ cuentas.monto_cuota|money }}</div>
+                        <div class="small text-muted">{{ cuentas.cuotas_cobradas }} de {{ cuentas.cuotas_total }} fechas cobradas</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card card-form mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center small mb-2 flex-wrap gap-1">
+                    <span class="fw-bold" style="color:#d81b60;"><i class="fas fa-chart-line me-1"></i>Progreso de pago</span>
+                    <span class="text-muted">
+                        Pagado <b style="color:#2e7d32;">{{ cuentas.total_pagado|money }}</b>
+                        {% if cuentas.cantidad_abonos %}· {{ cuentas.cantidad_abonos }} abono{{ 's' if cuentas.cantidad_abonos != 1 }}{% endif %}
+                        · Queda debiendo <b style="color:#b26a00;">{{ cuentas.saldo_pendiente|money }}</b>
+                    </span>
+                </div>
+                <div class="progress" style="height: 18px;" role="progressbar" aria-valuenow="{{ cuentas.porcentaje_pagado }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: {{ cuentas.porcentaje_pagado }}%; background: linear-gradient(135deg, #ff6bb3, #ff9ec9); font-weight: 700;">
+                        {{ cuentas.porcentaje_pagado }}%
+                    </div>
+                </div>
+                {% if cuentas.proxima_cuota and fiado.estado != 'Pagado' %}
+                <div class="small mt-2">
+                    {% if cuentas.proxima_cuota.vencida %}
+                        <span style="color:#c2185b;"><i class="fas fa-exclamation-triangle me-1"></i>Cuota vencida desde el {{ cuentas.proxima_cuota.fecha }} ({{ cuentas.proxima_cuota.dias }} día{{ 's' if cuentas.proxima_cuota.dias != 1 }} de atraso) · {{ cuentas.monto_cuota|money }}</span>
+                    {% else %}
+                        <span class="text-muted"><i class="fas fa-calendar-day me-1" style="color:#1d4ed8;"></i>Próxima fecha de cobro: <b>{{ cuentas.proxima_cuota.fecha }}</b> · en {{ cuentas.proxima_cuota.dias }} día{{ 's' if cuentas.proxima_cuota.dias != 1 }} · {{ cuentas.monto_cuota|money }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -215,9 +243,10 @@
                                 {% endif %}
                             {% else %}
                                 <span class="badge badge-pendiente ms-2"><i class="fas fa-clock me-1"></i>Pendiente</span>
-                                {% set fecha_obj = fr.fecha|to_date if fr.fecha is defined else none %}
+                                {% set fecha_obj = fr.fecha if fr.fecha is defined else none %}
                             {% endif %}
                         </div>
+                        <div class="fw-bold small" style="color:#2e7d32;">{{ cuentas.monto_cuota|money }}</div>
                     </div>
                     {% endfor %}
                 </div>
@@ -253,6 +282,10 @@
                 <div class="mt-3">
                     <div class="small text-muted mb-1">Pago rápido:</div>
                     <div class="d-flex flex-wrap gap-2">
+                        {% set cuota_sugerida = [cuentas.monto_cuota, fiado.saldo_pendiente]|min %}
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="abonoRapido({{ '%.2f'|format(cuota_sugerida) }})">
+                            Una cuota · {{ cuota_sugerida|money }}
+                        </button>
                         <button type="button" class="btn btn-success btn-sm" onclick="abonoRapido({{ fiado.saldo_pendiente }})">
                             Saldar todo · {{ fiado.saldo_pendiente|money }}
                         </button>
@@ -268,26 +301,34 @@
             </div>
             <div class="card-body p-4">
                 <div class="table-responsive">
+                    {% set ns = namespace(saldo=fiado.total) %}
+                    {% set filas_abonos = [] %}
+                    {% for a in fiado.abonos %}
+                        {% set ns.saldo = ns.saldo - a.monto %}
+                        {% if filas_abonos.append({'a': a, 'saldo': ns.saldo}) %}{% endif %}
+                    {% endfor %}
                     <table class="table table-bordered mb-0">
                         <thead class="thead-purple">
                             <tr>
                                 <th class="py-2">N°</th>
                                 <th class="py-2">Fecha</th>
                                 <th class="text-end py-2">Monto</th>
+                                <th class="text-end py-2">Saldo restante</th>
                                 <th class="py-2">Registrado por</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for a in fiado.abonos|reverse %}
+                            {% for fila in filas_abonos|reverse %}
                             <tr>
-                                <td class="fw-bold">Abono {{ a.n }}</td>
-                                <td>{{ a.fecha }}</td>
-                                <td class="text-end fw-bold" style="color:#2e7d32;">{{ a.monto|money }}</td>
-                                <td>{{ a.registrado_por or '—' }}</td>
+                                <td class="fw-bold">Abono {{ fila.a.n }}</td>
+                                <td>{{ fila.a.fecha }}</td>
+                                <td class="text-end fw-bold" style="color:#2e7d32;">{{ fila.a.monto|money }}</td>
+                                <td class="text-end fw-bold" style="color:#b26a00;">{{ [fila.saldo, 0]|max|money }}</td>
+                                <td>{{ fila.a.registrado_por or '—' }}</td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
+                                <td colspan="5" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Aún no se han registrado abonos.
                                 </td>
                             </tr>

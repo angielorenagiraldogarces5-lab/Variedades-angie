@@ -63,10 +63,11 @@ def _resumen_por_cliente(fiados):
         nombre = f.get("cliente", {}).get("nombre", "Sin nombre")
         r = resumen.setdefault(
             nombre,
-            {"nombre": nombre, "fiados": 0, "total": 0.0, "saldo": 0.0},
+            {"nombre": nombre, "fiados": 0, "total": 0.0, "pagado": 0.0, "saldo": 0.0},
         )
         r["fiados"] += 1
         r["total"] = round(r["total"] + float(f.get("total", 0)), 2)
+        r["pagado"] = round(r["pagado"] + float(f.get("total_pagado", 0)), 2)
         r["saldo"] = round(r["saldo"] + float(f.get("saldo_pendiente", 0)), 2)
     return sorted(resumen.values(), key=lambda r: r["saldo"], reverse=True)
 
@@ -250,6 +251,7 @@ def ver(numero):
         "fiado.html",
         fiado=fiado,
         factura=factura,
+        cuentas=fiados_store.resumen_cuentas(fiado),
         fecha_hoy=ahora().strftime("%Y-%m-%d"),
     )
 
@@ -282,6 +284,7 @@ def tarjeta(numero):
     return render_template(
         "tarjeta_cobro.html",
         fiado=fiado,
+        cuentas=fiados_store.resumen_cuentas(fiado),
         ciudad="Mendoza",
         dias_pago=dias_pago,
         fecha_hoy=ahora().strftime("%Y-%m-%d"),
@@ -400,7 +403,7 @@ def reestructurar(numero):
         flash("El pago inicial cubre toda la deuda. No hay nada que reestructurar.", "danger")
         return redirect(url_for("fiados.ver", numero=numero))
 
-    factura = facturas_store.load_fiados().get(fiado.get("factura_origen"))
+    factura = facturas_store.load_facturas().get(fiado.get("factura_origen"))
     if not factura:
         factura = {
             "numero": fiado.get("factura_origen", ""),

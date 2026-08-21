@@ -69,6 +69,7 @@
 
         {% set total_fiados = fiados|length %}
         {% set total_monto = fiados.values()|sum(attribute='total') %}
+        {% set total_cobrado = fiados.values()|sum(attribute='total_pagado') %}
         {% set pendientes = fiados.values()|selectattr('estado', 'equalto', 'Pendiente')|list %}
         {% set monto_pendiente = pendientes|sum(attribute='saldo_pendiente') %}
         {% set total_productos_list = [] %}
@@ -80,7 +81,7 @@
         {% set total_productos = total_productos_list|sum %}
 
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md">
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
                     <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-file-contract"></i></div>
                     <div>
@@ -89,7 +90,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md">
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
                     <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-boxes"></i></div>
                     <div>
@@ -98,21 +99,31 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md">
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
-                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-coins"></i></div>
+                    <div class="stat-icon me-3" style="background:#ffd6e8; color:#d81b60;"><i class="fas fa-coins"></i></div>
                     <div>
                         <div class="text-muted small">Total fiado</div>
-                        <div class="fw-bold fs-4" style="color:#2e7d32;">{{ total_monto|money }}</div>
+                        <div class="fw-bold fs-4" style="color:#d81b60;">{{ total_monto|money }}</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md">
+                <div class="card stat-card p-3 d-flex flex-row align-items-center">
+                    <div class="stat-icon me-3" style="background:#e9fbe9; color:#2e7d32;"><i class="fas fa-hand-holding-usd"></i></div>
+                    <div>
+                        <div class="text-muted small">Total cobrado</div>
+                        <div class="fw-bold fs-4" style="color:#2e7d32;">{{ total_cobrado|money }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
                 <div class="card stat-card p-3 d-flex flex-row align-items-center">
                     <div class="stat-icon me-3" style="background:#fff4e5; color:#b26a00;"><i class="fas fa-clock"></i></div>
                     <div>
-                        <div class="text-muted small">Pendiente de cobro</div>
-                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ pendientes|length }} · {{ monto_pendiente|money }}</div>
+                        <div class="text-muted small">Por cobrar</div>
+                        <div class="fw-bold fs-4" style="color:#b26a00;">{{ monto_pendiente|money }}</div>
+                        <div class="small text-muted">{{ pendientes|length }} pendiente{{ 's' if pendientes|length != 1 }}</div>
                     </div>
                 </div>
             </div>
@@ -239,6 +250,10 @@
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Total fiado</span>
                         <b>{{ r.total|money }}</b>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Ya pagado</span>
+                        <b style="color:#2e7d32;">{{ r.pagado|money }}</b>
                     </div>
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Saldo pendiente</span>
