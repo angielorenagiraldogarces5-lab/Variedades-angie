@@ -302,6 +302,29 @@ def abonar(numero):
     return redirect(url_for("fiados.ver", numero=numero))
 
 
+@bp.route("/fiados/<numero>/agregar-productos", methods=["POST"])
+def agregar_productos(numero):
+    if not _logueado():
+        return redirect(url_for("login.login"))
+
+    descripciones = request.form.getlist("descripcion")
+    cantidades = request.form.getlist("cantidad")
+    precios = request.form.getlist("precio")
+
+    items = []
+    for desc, cant, prec in zip(descripciones, cantidades, precios):
+        desc = (desc or "").strip()
+        cant = (cant or "").strip()
+        prec = (prec or "").strip()
+        if not desc and not cant and not prec:
+            continue
+        items.append({"descripcion": desc, "cantidad": cant, "precio": prec})
+
+    ok, msg = fiados_store.agregar_productos(numero, items)
+    flash(msg, "success" if ok else "danger")
+    return redirect(url_for("fiados.ver", numero=numero))
+
+
 @bp.route("/fiados/<numero>/eliminar", methods=["POST"])
 def eliminar(numero):
     if not _logueado() or session.get("rol") not in ("Admin", "Dueño"):

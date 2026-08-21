@@ -222,6 +222,67 @@ def registrar_abono(numero, fecha, monto, registrado_por):
     return True, f"Abono de {formatear_moneda(monto)} registrado correctamente."
 
 
+def agregar_productos(numero, items):
+    """Agrega productos a un fiado existente, recalculando total y saldo.
+
+    Los abonos ya registrados se conservan: saldo = total nuevo - total_pagado.
+    También sincroniza la factura de origen si existe.
+    """
+    fiados = load_fiados()
+    fiado = fiados.get(numero)
+    if not fiado:
+        return False, "El fiado no existe."
+
+    if not items:
+        return False, "No hay productos para agregar."
+
+    nuevos = []
+    for it in items:
+        descripcion = str(it.get("descripcion", "")).strip()
+        if not descripcion:
+            return False, "Todos los productos deben tener descripción."
+        try:
+            cantidad = round(float(it.get("cantidad", 0)), 2)
+            precio = round(float(it.get("precio", 0)), 2)
+        except (TypeError, ValueError):
+            return False, f"Cantidad o precio inválidos en '{descripcion}'."
+        if cantidad <= 0 or precio <= 0:
+            return False, f"La cantidad y el precio de '{descripcion}' deben ser mayores a cero."
+        nuevos.append(
+            {"descripcion": descripcion, "cantidad": cantidad, "precio": precio}
+        )
+
+    fiado["items"] = list(fiado.get("items") or []) + nuevos
+    fiado["total"] = round(
+        sum(float(i.get("cantidad", 0)) * float(i.get("precio", 0)) for i in fiado["items"]), 2
+    )
+    _recalcular_totales(fiado)
+
+    origen = fiado.get("factura_origen")
+    if origen:
+        facturas = facturas_store.load_facturas()
+        factura = facturas.get(origen)
+        if factura:
+            factura["items"] = fiado["items"]
+            factura["subtotal"] = fiado["total"]
+            factura["total"] = fiado["total"]
+            comision_pct = float(factura.get("comision_pct", 0) or 0)
+            factura["comision_monto"] = round(fiado["total"] * comision_pct / 100.0, 2)
+            facturas_store.save_facturas(facturas)
+
+    save_fiados(fiados)
+    _actualizar_estadisticas_cliente(fiado.get("cliente", {}).get("id"))
+
+    monto_agregado = round(
+        sum(float(i["cantidad"]) * float(i["precio"]) for i in nuevos), 2
+    )
+    return True, (
+        f"{len(nuevos)} producto(s) agregado(s) por {formatear_moneda(monto_agregado)}. "
+        f"Nuevo total: {formatear_moneda(fiado['total'])} · "
+        f"Nuevo saldo: {formatear_moneda(fiado['saldo_pendiente'])}."
+    )
+
+
 def aprobar_fiado(numero, estado, razon=""):
     fiados = load_fiados()
     fiado = fiados.get(numero)

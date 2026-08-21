@@ -295,6 +295,55 @@
         </div>
         {% endif %}
 
+        {% if fiado.estado != 'Pagado' %}
+        <div class="card card-form mb-4">
+            <div class="card-header py-3 px-4">
+                <i class="fas fa-box-open me-2"></i>Agregar productos al fiado
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    <i class="fas fa-info-circle me-1" style="color:#d81b60;"></i>
+                    Los productos nuevos se suman al total del fiado y el dinero ya abonado se conserva.
+                    Las cuotas pendientes se ajustan automáticamente.
+                </p>
+                <form method="POST" action="/fiados/{{ fiado.numero }}/agregar-productos">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div id="filasProducto"></div>
+                    <button type="button" class="btn btn-outline-purple btn-sm mt-1" onclick="agregarFilaProducto()">
+                        <i class="fas fa-plus me-1"></i>Agregar otro producto
+                    </button>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3 pt-3" style="border-top: 1px dashed #ffe3ef;">
+                        <div class="small">
+                            Nuevo total: <b style="color:#d81b60;" id="previewTotal">{{ fiado.total|money }}</b><br>
+                            Nuevo saldo: <b style="color:#b26a00;" id="previewSaldo">{{ fiado.saldo_pendiente|money }}</b>
+                            <span class="text-muted">(total menos lo ya abonado)</span>
+                        </div>
+                        <button type="submit" class="btn btn-pink py-2 px-4">
+                            <i class="fas fa-plus me-1"></i>Agregar productos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <template id="tplProducto">
+            <div class="row g-2 fila-producto mb-2">
+                <div class="col-md-6">
+                    <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción del producto" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="cantidad" class="form-control form-control-sm" placeholder="Cant." min="1" step="1" value="1" required oninput="actualizarPreviewProductos()">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="precio" class="form-control form-control-sm" placeholder="Precio" min="0.01" step="0.01" required oninput="actualizarPreviewProductos()">
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaProducto(this)" title="Quitar">&times;</button>
+                </div>
+            </div>
+        </template>
+
         <div class="card card-form">
             <div class="card-header py-3 px-4">
                 <i class="fas fa-history me-2"></i>Historial de abonos
@@ -345,6 +394,31 @@
         function abonoRapido(monto) {
             document.getElementById('montoAbono').value = monto.toFixed(2);
         }
+
+        function agregarFilaProducto() {
+            const tpl = document.getElementById('tplProducto');
+            document.getElementById('filasProducto').appendChild(tpl.content.cloneNode(true));
+            actualizarPreviewProductos();
+        }
+
+        function quitarFilaProducto(btn) {
+            btn.closest('.fila-producto').remove();
+            actualizarPreviewProductos();
+        }
+
+        function actualizarPreviewProductos() {
+            let total = {{ fiado.total }};
+            document.querySelectorAll('#filasProducto .fila-producto').forEach(function(fila) {
+                const cant = parseFloat(fila.querySelector('[name=cantidad]').value) || 0;
+                const precio = parseFloat(fila.querySelector('[name=precio]').value) || 0;
+                total += cant * precio;
+            });
+            const abonado = {{ fiado.total_pagado }};
+            const fmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('previewTotal').textContent = '$ ' + fmt.format(total);
+            document.getElementById('previewSaldo').textContent = '$ ' + fmt.format(Math.max(total - abonado, 0));
+        }
+        agregarFilaProducto();
     </script>
 </body>
 </html>
