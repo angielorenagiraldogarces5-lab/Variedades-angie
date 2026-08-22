@@ -295,7 +295,6 @@
         </div>
         {% endif %}
 
-        {% if fiado.estado != 'Pagado' %}
         <div class="card card-form mb-4">
             <div class="card-header py-3 px-4">
                 <i class="fas fa-box-open me-2"></i>Agregar productos al fiado
@@ -305,6 +304,9 @@
                     <i class="fas fa-info-circle me-1" style="color:#d81b60;"></i>
                     Los productos nuevos se suman al total del fiado y el dinero ya abonado se conserva.
                     Las cuotas pendientes se ajustan automáticamente.
+                    {% if fiado.estado == 'Pagado' %}
+                    Si el fiado ya estaba pagado, vuelve a quedar <b>pendiente</b> con el nuevo saldo.
+                    {% endif %}
                 </p>
                 <form method="POST" action="/fiados/{{ fiado.numero }}/agregar-productos">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -325,7 +327,6 @@
                 </form>
             </div>
         </div>
-        {% endif %}
 
         <template id="tplProducto">
             <div class="row g-2 fila-producto mb-2">
