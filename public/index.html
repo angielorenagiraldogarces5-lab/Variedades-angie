@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Variedades Angie — Sistema de Inventario</title>
+  <link rel="stylesheet" href="/css/styles.css?v=20260824h">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛍️</text></svg>">
+</head>
+<body>
+
+  <!-- ============ LOGIN ============ -->
+  <div id="login-view" class="login-view hidden">
+    <div class="login-card">
+      <div class="login-logo">🛍️</div>
+      <h1>Variedades Angie</h1>
+      <p class="login-sub">Sistema de Inventario</p>
+      <form id="login-form">
+        <label for="login-username">Usuario</label>
+        <input type="text" id="login-username" autocomplete="username" required>
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" autocomplete="current-password" required>
+        <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
+      </form>
+      <p id="login-error" class="error-msg hidden"></p>
+    </div>
+  </div>
+
+  <!-- ============ APP ============ -->
+  <div id="app-view" class="app-view hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">🛍️</span>
+        <div>
+          <strong>Variedades Angie</strong>
+          <small>Inventario</small>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button data-view="dashboard" class="nav-item active"><span>📊</span> Panel</button>
+        <button data-view="facturar" class="nav-item"><span>🧾</span> Facturar</button>
+        <button data-view="pedidos" class="nav-item"><span>📋</span> Pedidos</button>
+        <button data-view="facturas" class="nav-item"><span>📄</span> Facturas</button>
+        <button data-view="cobros" class="nav-item"><span>💳</span> Cobros (fiados)</button>
+        <button data-view="comisiones" class="nav-item"><span>💰</span> Comisiones</button>
+        <button data-view="productos" class="nav-item"><span>📦</span> Productos</button>
+        <button data-view="movimientos" class="nav-item"><span>🔄</span> Movimientos</button>
+        <button data-view="clientes" class="nav-item"><span>👤</span> Clientes</button>
+        <button data-view="usuarios" class="nav-item admin-only"><span>👥</span> Colaboradores</button>
+        <button data-view="config" class="nav-item admin-only"><span>⚙️</span> Configuración</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btn-change-password" class="btn-link">🔑 Cambiar contraseña</button>
+        <button id="btn-logout" class="btn-link danger">🚪 Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- Panel -->
+      <section id="view-dashboard" class="view active">
+        <header class="view-header">
+          <h2>Panel de control</h2>
+          <button class="btn btn-outline" onclick="loadDashboard()">↻ Actualizar</button>
+        </header>
+        <div id="dashboard-content"></div>
+      </section>
+
+      <!-- Productos -->
+      <section id="view-productos" class="view">
+        <header class="view-header">
+          <h2>Productos</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="openMovementModal()">🔄 Movimiento</button>
+            <button class="btn btn-primary" onclick="openProductModal()">＋ Nuevo producto</button>
+          </div>
+        </header>
+        <div class="toolbar">
+          <input type="search" id="product-search" placeholder="Buscar por nombre o código..." oninput="debouncedLoadProducts()">
+          <select id="product-category-filter" onchange="loadProducts()"></select>
+          <label class="checkbox-label"><input type="checkbox" id="low-stock-filter" onchange="loadProducts()"> Solo stock bajo</label>
+        </div>
+        <div class="table-wrap"><table id="products-table"></table></div>
+      </section>
+
+      <!-- Movimientos -->
+      <section id="view-movimientos" class="view">
+        <header class="view-header">
+          <h2>Movimientos de inventario</h2>
+          <button class="btn btn-primary" onclick="openMovementModal()">＋ Registrar movimiento</button>
+        </header>
+        <div class="toolbar">
+          <select id="movement-type-filter" onchange="loadMovements()">
+            <option value="">Todos los tipos</option>
+            <option value="entrada">Entradas</option>
+            <option value="salida">Salidas</option>
+            <option value="ajuste">Ajustes</option>
+          </select>
+          <input type="date" id="movement-from" onchange="loadMovements()">
+          <input type="date" id="movement-to" onchange="loadMovements()">
+        </div>
+        <div class="table-wrap"><table id="movements-table"></table></div>
+      </section>
+
+      <!-- Categorías -->
+      <section id="view-categorias" class="view">
+        <header class="view-header">
+          <h2>Categorías</h2>
+          <button class="btn btn-primary" onclick="openCategoryModal()">＋ Nueva categoría</button>
+        </header>
+        <div class="table-wrap"><table id="categories-table"></table></div>
+      </section>
+
+      <!-- Usuarios (Colaboradores) -->
+      <section id="view-usuarios" class="view">
+        <header class="view-header">
+          <h2>Colaboradores</h2>
+          <button class="btn btn-primary" onclick="openUserModal()">＋ Nuevo colaborador</button>
+        </header>
+        <div class="table-wrap"><table id="users-table"></table></div>
+      </section>
+      <!-- Facturar (Punto de venta) -->
+      <section id="view-facturar" class="view">
+        <header class="view-header">
+          <h2>🧾 Nueva venta</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="openProductModal()">＋ Nuevo producto</button>
+            <button class="btn btn-outline" onclick="openCustomerModal()">＋ Nuevo cliente</button>
+            <button class="btn btn-primary" onclick="openPosPicker()">🔍 Agregar productos</button>
+            <button class="btn btn-outline" onclick="printPosDraft()">🖨 Imprimir</button>
+          </div>
+        </header>
+
+        <!-- Encabezado estilo factura: datos generales en una línea -->
+        <div class="pos-form-card">
+          <div class="pos-fields-grid">
+            <label>Cliente registrado
+              <select id="pos-customer"></select>
+            </label>
+            <label>Nombre en factura
+              <input type="text" id="pos-client-name" maxlength="80" placeholder="Nombre y apellido">
+            </label>
+            <label>Teléfono
+              <input type="text" id="pos-client-phone" maxlength="40" placeholder="Ej: 11 2345-6789">
+            </label>
+            <label>Email
+              <input type="text" id="pos-client-email" maxlength="80" placeholder="cliente@correo.com">
+            </label>
+            <label>Vendedor que atiende
+              <select id="pos-seller" onchange="renderPosCommission()"></select>
+            </label>
+            <label>Fecha
+              <input type="date" id="pos-date">
+            </label>
+            <label>Método de pago
+              <select id="pos-payment">
+                <option value="efectivo">💵 Efectivo</option>
+                <option value="tarjeta">💳 Tarjeta</option>
+                <option value="transferencia">🏦 Transferencia / Mercado Pago</option>
+                <option value="fiado">📝 Fiado (queda debiendo)</option>
+              </select>
+            </label>
+            <label>Dirección (opcional)
+              <input type="text" id="pos-client-address" maxlength="120" placeholder="Calle y altura, ciudad...">
+            </label>
+            <div id="pos-cash-row" class="pos-cash-cell">
+              <label>¿Con cuánto paga?
+                <input type="number" id="pos-cash-received" min="0" step="any" placeholder="0" oninput="renderPosChange()">
+              </label>
+              <div id="pos-change" class="pos-change"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla central de productos -->
+        <div class="pos-items-wrap">
+          <table class="pos-items-table" id="pos-cart"></table>
+        </div>
+
+        <!-- Pie: acciones + totales -->
+        <div class="pos-footer">
+          <div class="pos-footer-left">
+            <button class="btn btn-outline" onclick="addFreeItem()">✍️ Agregar artículo a mano</button>
+            <button class="btn btn-outline" onclick="clearPosCart()">🧹 Limpiar venta</button>
+            <div id="pos-commission" class="pos-commission"></div>
+          </div>
+          <div class="pos-totals">
+            <div class="tot-row"><span>Subtotal</span><strong id="pos-subtotal">$0</strong></div>
+            <div class="tot-row tot-tax">
+              <span class="tax-label">IVA / Impuesto
+                <input type="number" id="pos-tax-rate" min="0" max="100" step="0.5" value="0" onchange="renderPosTotals()" title="% de impuesto ya incluido en los precios">%
+              </span>
+              <strong id="pos-tax">$0</strong>
+            </div>
+            <div class="tot-row tot-grand"><span>TOTAL A PAGAR</span><strong id="pos-total">$0</strong></div>
+            <button class="btn btn-primary btn-big pos-finish-btn" onclick="createInvoice()">✅ Generar factura</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pedidos -->
+      <section id="view-pedidos" class="view">
+        <header class="view-header">
+          <h2>📋 Toma de pedidos</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="loadOrders()">↻ Actualizar</button>
+            <button class="btn btn-primary" onclick="openOrderModal()">＋ Tomar pedido</button>
+          </div>
+        </header>
+        <p class="config-hint">Los pedidos anotan lo que el cliente encargó sin descontar stock. Al entregar se genera la factura (efectivo, tarjeta, transferencia o fiado) y recién ahí sale del inventario.</p>
+        <div class="toolbar">
+          <input type="search" id="order-search" placeholder="Buscar por cliente o teléfono..." oninput="debouncedLoadOrders()">
+          <select id="order-status-filter" onchange="loadOrders()">
+            <option value="">Activos y entregados</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="confirmado">Confirmados</option>
+            <option value="listo">Listos para entregar</option>
+            <option value="entregado">Entregados</option>
+            <option value="cancelado">Cancelados</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table id="orders-table"></table></div>
+      </section>
+
+      <!-- Facturas -->
+      <section id="view-facturas" class="view">
+        <header class="view-header">
+          <h2>Facturas emitidas</h2>
+          <button class="btn btn-outline" onclick="loadInvoices()">↻ Actualizar</button>
+        </header>
+        <div class="toolbar">
+          <select id="invoice-status-filter" onchange="loadInvoices()">
+            <option value="">Todos los estados</option>
+            <option value="pagada">Pagadas</option>
+            <option value="pendiente">Fiadas (pendientes)</option>
+            <option value="anulada">Anuladas</option>
+          </select>
+          <input type="date" id="invoice-from" onchange="loadInvoices()">
+          <input type="date" id="invoice-to" onchange="loadInvoices()">
+        </div>
+        <div class="table-wrap"><table id="invoices-table"></table></div>
+      </section>
+
+      <!-- Cobros (Fiados) -->
+      <section id="view-cobros" class="view">
+        <header class="view-header">
+          <h2>Cobros de fiados</h2>
+          <button class="btn btn-outline" onclick="loadCollections()">↻ Actualizar</button>
+        </header>
+        <div id="collections-summary"></div>
+        <div class="tabs">
+          <button id="tab-manuales" class="tab-btn active" onclick="switchCollectionsTab('manuales')">📝 Tarjetas manuales</button>
+          <button id="tab-facturas" class="tab-btn" onclick="switchCollectionsTab('facturas')">🧾 Fiados de facturas</button>
+        </div>
+        <div class="toolbar">
+          <input type="search" id="collection-search" placeholder="Buscar cliente o artículo..." oninput="debouncedLoadCollections()">
+          <select id="collection-status-filter" onchange="loadCollections()">
+            <option value="">Pendientes y pagadas</option>
+            <option value="pendiente">Solo pendientes</option>
+            <option value="pagada">Solo pagadas</option>
+            <option value="anulada">Anuladas</option>
+          </select>
+          <label class="checkbox-label"><input type="checkbox" id="collection-old-filter" onchange="loadCollections()"> 🔴 Solo morosos (+90 días)</label>
+          <button class="btn btn-primary" onclick="openCardModal()">＋ Nueva tarjeta</button>
+        </div>
+        <p class="config-hint" id="collections-hint"></p>
+        <div id="manual-cards-grid" class="cards-grid"></div>
+        <div id="customer-cards-grid" class="cards-grid hidden"></div>
+      </section>
+
+      <!-- Comisiones -->
+      <section id="view-comisiones" class="view">
+        <header class="view-header">
+          <h2>Comisiones de colaboradores</h2>
+          <button class="btn btn-outline" onclick="loadCommissions()">↻ Actualizar</button>
+        </header>
+        <div class="toolbar">
+          <label class="toolbar-label">Desde <input type="date" id="comm-from" onchange="loadCommissions()"></label>
+          <label class="toolbar-label">Hasta <input type="date" id="comm-to" onchange="loadCommissions()"></label>
+        </div>
+        <p class="config-hint" id="commissions-hint">La comisión se calcula sobre todas las ventas del período (facturas anuladas no cuentan). Las ventas fiadas se muestran aparte hasta que se cobren.</p>
+        <div class="table-wrap"><table id="commissions-table"></table></div>
+      </section>
+
+      <!-- Clientes -->
+      <section id="view-clientes" class="view">
+        <header class="view-header">
+          <h2>Clientes</h2>
+          <button class="btn btn-primary" onclick="openCustomerModal()">＋ Nuevo cliente</button>
+        </header>
+        <div class="table-wrap"><table id="customers-table"></table></div>
+      </section>
+
+      <!-- Configuración -->
+      <section id="view-config" class="view">
+        <header class="view-header">
+          <h2>Configuración del negocio</h2>
+        </header>
+        <p class="config-hint">Estos datos aparecen en el encabezado de todas las facturas que imprimas.</p>
+        <form id="settings-form" class="settings-card">
+          <div class="form-grid">
+            <div class="full">
+              <label>Nombre del negocio *</label>
+              <input type="text" name="store_name" required maxlength="80" placeholder="Variedades Angie">
+            </div>
+            <div class="full">
+              <label>CUIT / Identificación fiscal</label>
+              <input type="text" name="nit" maxlength="40" placeholder="Ej: 30-71234567-8">
+            </div>
+            <div>
+              <label>Teléfono</label>
+              <input type="text" name="phone" maxlength="40" placeholder="Ej: 11 2345-6789">
+            </div>
+            <div class="full">
+              <label>Dirección</label>
+              <input type="text" name="address" maxlength="120" placeholder="Ej: San Martín 1250, Ciudad">
+            </div>
+            <div>
+              <label>Comisión de colaboradores (%)</label>
+              <input type="number" name="commission_rate" min="0" max="100" step="1" placeholder="15">
+            </div>
+            <div class="full">
+              <label>Mensaje al pie de la factura</label>
+              <input type="text" name="invoice_footer" maxlength="200" placeholder="Conserve esta factura para cambios o garantías...">
+            </div>
+            <p class="form-error"></p>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="loadSettings()">↻ Descartar cambios</button>
+            <button type="submit" class="btn btn-primary">💾 Guardar datos</button>
+          </div>
+        </form>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Área de impresión de facturas -->
+  <div id="print-area"></div>
+
+  <!-- ============ MODAL GENÉRICO ============ -->
+  <dialog id="modal">
+    <div class="modal-header">
+      <h3 id="modal-title"></h3>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </dialog>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/app.js?v=20260824i"></script>
+</body>
+</html>
