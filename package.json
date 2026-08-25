@@ -7,7 +7,7 @@
     "node": ">=22.5.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node --experimental-sqlite server.js",
     "dev": "node server.js"
   },
   "dependencies": {
