@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ compra.numero }} - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .factura-paper { background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); padding: 40px; max-width: 820px; margin: 0 auto; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); }
+        .btn-pink:hover { color: #fff; }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .badge-pagada { background: #e9fbe9; color: #2e7d32; border: 1px solid #7ed38a; }
+        .badge-pendiente { background: #fff4e5; color: #b26a00; border: 1px solid #ffc566; }
+        @media print {
+            body { background: #fff !important; }
+            .no-print { display: none !important; }
+            .factura-paper { box-shadow: none; border-radius: 0; padding: 20px; max-width: 100%; }
+            .table { font-size: 13px; }
+        }
+        .empresa-nombre { color: #d81b60; font-weight: 800; font-size: 26px; }
+        .comprobante-tipo { font-weight: 800; color: #333; font-size: 22px; text-align: right; }
+        .comprobante-numero { font-size: 18px; color: #d81b60; font-weight: 700; text-align: right; }
+        .info-box { border: 1px solid #ffe3ef; border-radius: 12px; background: #fff6fa; }
+        .total-row td { background: #ffeff6; font-weight: 700; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center no-print">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/compras" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <button class="btn btn-light btn-sm text-dark" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="factura-paper">
+            <div class="row mb-4">
+                <div class="col-6">
+                    <div class="empresa-nombre"><i class="fas fa-cube me-1"></i>Variedades Angie</div>
+                    <div class="text-muted small">Av. Principal 123, Lima</div>
+                    <div class="text-muted small">RUC: 20XXXXXXXXX</div>
+                    <div class="text-muted small">Tel: (01) 555-1234</div>
+                </div>
+                <div class="col-6">
+                    <div class="comprobante-tipo">Compra de Mercancía</div>
+                    <div class="comprobante-numero">N° {{ compra.numero }}</div>
+                    <div class="mt-2">
+                        {% if compra.estado == 'Pagada' %}
+                            <span class="badge badge-pagada"><i class="fas fa-check-circle me-1"></i>PAGADA</span>
+                        {% else %}
+                            <span class="badge badge-pendiente"><i class="fas fa-hourglass-half me-1"></i>PENDIENTE</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-7">
+                    <div class="info-box p-3 h-100">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:#ff6bb3;">Proveedor</div>
+                        <div class="fw-bold">{{ compra.proveedor.nombre }}</div>
+                        {% if compra.proveedor.documento %}<div class="small text-muted">Documento: {{ compra.proveedor.documento }}</div>{% endif %}
+                        {% if compra.proveedor.telefono %}<div class="small text-muted">Teléfono: {{ compra.proveedor.telefono|tf }}</div>{% endif %}
+                        {% if compra.proveedor.direccion %}<div class="small text-muted">Dirección: {{ compra.proveedor.direccion }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="info-box p-3 h-100">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:#ff6bb3;">Datos de la compra</div>
+                        <div class="small">Fecha: <b>{{ compra.fecha }}</b></div>
+                        <div class="small">Registrado por: <b>{{ compra.registrado_por or '—' }}</b></div>
+                        {% if compra.caja_movimiento %}
+                        <div class="small">Pago en caja: <b>{{ compra.caja_movimiento.numero }} · Mov. {{ compra.caja_movimiento.n }}</b></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <table class="table table-bordered mb-4">
+                <thead>
+                    <tr style="background:#ff6bb3; color:#fff;">
+                        <th class="py-2">Descripción</th>
+                        <th class="text-center py-2" style="width:100px;">Cant.</th>
+                        <th class="text-end py-2" style="width:130px;">Costo Unit.</th>
+                        <th class="text-end py-2" style="width:140px;">Importe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in compra['items'] %}
+                    <tr>
+                        <td>{{ item.descripcion }}</td>
+                        <td class="text-center">{{ '%.2f'|format(item.cantidad) }}</td>
+                        <td class="text-end">{{ item.costo|money }}</td>
+                        <td class="text-end">{{ item.subtotal|money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3" class="text-end">TOTAL</td>
+                        <td class="text-end">{{ compra.total|money }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            {% if compra.observacion %}
+            <div class="mb-4">
+                <div class="small fw-bold text-uppercase" style="color:#ff6bb3;">Observaciones</div>
+                <p class="text-muted small mb-0">{{ compra.observacion }}</p>
+            </div>
+            {% endif %}
+
+            <div class="row mt-5 pt-4">
+                <div class="col-6 text-center">
+                    <div style="border-top: 1px solid #ccc; margin: 0 40px; padding-top: 6px;" class="small text-muted">Entregado por (proveedor)</div>
+                </div>
+                <div class="col-6 text-center">
+                    <div style="border-top: 1px solid #ccc; margin: 0 40px; padding-top: 6px;" class="small text-muted">Recibido por</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-print text-center mt-4 pb-4">
+            <form method="POST" action="/compras/{{ compra.numero }}/estado" class="d-inline">
+                <select name="estado" class="form-select d-inline-block w-auto me-2">
+                    <option value="Pendiente" {% if compra.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="Pagada" {% if compra.estado == 'Pagada' %}selected{% endif %}>Pagada</option>
+                </select>
+                <button class="btn btn-outline-purple"><i class="fas fa-sync me-1"></i>Actualizar estado</button>
+            </form>
+            <button class="btn btn-pink ms-2" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

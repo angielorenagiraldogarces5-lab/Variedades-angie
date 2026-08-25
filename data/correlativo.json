@@ -1,0 +1,9 @@
+{
+    "Factura": 2,
+    "Boleta": 0,
+    "Fiado": 3,
+    "NotaCredito": 1,
+    "Pagare": 1,
+    "Caja": 5,
+    "Compra": 2
+}

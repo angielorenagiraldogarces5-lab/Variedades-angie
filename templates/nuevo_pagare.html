@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Pagaré - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .card-form { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); }
+        .card-form .card-header { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); color: #fff; border-radius: 18px 18px 0 0; border: none; font-weight: 700; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .form-control, .form-select { border: 2px solid #ffd6e8; border-radius: 10px; }
+        .form-control:focus, .form-select:focus { border-color: #ff6bb3; box-shadow: 0 0 0 4px rgba(255, 107, 179, 0.15); }
+        .form-label { color: #d81b60; font-weight: 600; font-size: 13px; }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .info-box { border: 1px solid #ffe3ef; border-radius: 12px; background: #fff6fa; }
+        .total-box { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); color: #fff; border-radius: 14px; }
+        .monto-letras { background: #fff6fa; border: 2px dashed #ff6bb3; border-radius: 12px; padding: 12px 16px; color: #d81b60; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/pagares" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-file-signature me-2"></i>Nuevo Pagaré</h2>
+                <p class="page-subtitle mb-0">Genera un documento de promesa de pago, desde un fiado, factura o manual.</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% set s = seleccion or {} %}
+        {% set cli = s.get('cliente', {}) %}
+
+        <div class="card card-form mb-4">
+            <div class="card-header py-3 px-4">
+                <i class="fas fa-search me-2"></i>1. Elegir origen del pagaré
+            </div>
+            <div class="card-body p-4">
+                <form method="GET" action="/pagares/nuevo" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Origen</label>
+                        <select name="origen" id="origenSelect" class="form-select" onchange="toggleOrigen()">
+                            <option value="manual" {% if origen == 'manual' %}selected{% endif %}>Manual</option>
+                            <option value="fiado" {% if origen == 'fiado' %}selected{% endif %}>Por fiado</option>
+                            <option value="factura" {% if origen == 'factura' %}selected{% endif %}>Por factura / boleta</option>
+                        </select>
+                    </div>
+                    <div class="col-md-7" id="origenNumeroWrap" {% if origen == 'manual' %}style="display:none;"{% endif %}>
+                        <label class="form-label">Documento de origen</label>
+                        <select name="numero" class="form-select" id="origenNumero">
+                            <option value="">— Seleccione —</option>
+                            <optgroup label="Fiados" id="optFiados">
+                                {% for numero, f in fiados.items()|sort(reverse=true) %}
+                                <option value="{{ numero }}" data-monto="{{ f.total }}" {% if s.get('origen') == 'fiado' and numero == s.get('numero') %}selected{% endif %}>
+                                    {{ numero }} · {{ f.cliente.nombre }} · {{ f.total|money }}
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                            <optgroup label="Facturas / Boletas" id="optFacturas">
+                                {% for numero, f in facturas.items()|sort(reverse=true) %}
+                                <option value="{{ numero }}" data-monto="{{ f.total }}" {% if s.get('origen') == 'factura' and numero == s.get('numero') %}selected{% endif %}>
+                                    {{ numero }} · {{ f.cliente.nombre }} · {{ f.total|money }}
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-purple px-4 w-100"><i class="fas fa-download me-2"></i>Cargar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <form method="POST" action="/pagares/crear" class="card card-form">
+            <input type="hidden" name="origen" value="{{ s.get('origen') or origen }}">
+            <input type="hidden" name="origen_numero" value="{{ s.get('numero') or '' }}">
+            <div class="card-header py-3 px-4">
+                <i class="fas fa-pen-nib me-2"></i>2. Datos del pagaré
+            </div>
+            <div class="card-body p-4">
+                {% if s %}
+                <div class="info-box p-3 mb-4">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                            <div class="small text-muted">Origen</div>
+                            <div class="fw-bold">
+                                {% if s.get('origen') == 'fiado' %}Fiado{% else %}Factura / Boleta{% endif %}
+                                {{ s.get('numero') }} · <span class="text-muted small">{{ cli.get('nombre') }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="small text-muted">Monto a registrar</div>
+                            <div class="fw-bold fs-5" style="color:#d81b60;">{{ s.get('monto', 0)|money }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <h6 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-file-invoice me-1"></i>Emisión y pago</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha de emisión</label>
+                        <input type="date" name="fecha" class="form-control" value="{{ fecha_hoy }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Lugar de emisión</label>
+                        <input type="text" name="lugar" class="form-control" placeholder="Ej: Lima" value="{{ s.get('lugar', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha de vencimiento</label>
+                        <input type="date" name="fecha_vencimiento" class="form-control" value="{{ s.get('vencimiento', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tasa de interés (%)</label>
+                        <input type="number" name="interes" id="interes" class="form-control" min="0" step="0.01" value="{{ s.get('interes', 0) }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Monto en números ({{ moneda }})</label>
+                        <input type="number" name="monto" id="monto" class="form-control" min="0.01" step="0.01" value="{{ s.get('monto', '') }}" oninput="actualizarLetras()" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Monto en letras</label>
+                        <div class="monto-letras" id="montoLetras">—</div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-user me-1"></i>Deudor (cliente)</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre / Razón social *</label>
+                        <input type="text" name="cliente_nombre" class="form-control" value="{{ cli.get('nombre', '') }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Documento</label>
+                        <input type="text" name="cliente_documento" class="form-control" value="{{ cli.get('documento', '') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="cliente_telefono" class="form-control" value="{{ cli.get('telefono', '')|tf }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" name="cliente_direccion" class="form-control" value="{{ cli.get('direccion', '') }}">
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-3" style="color:#d81b60;"><i class="fas fa-landmark me-1"></i>Acreedor / Beneficiario</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre / Razón social</label>
+                        <input type="text" name="acreedor_nombre" class="form-control" value="{{ session.get('nombre') }}" placeholder="Nombre del negocio">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Documento</label>
+                        <input type="text" name="acreedor_documento" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="acreedor_telefono" class="form-control" placeholder="Ej. +54 9 2612 48-0399">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" name="acreedor_direccion" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label">Observaciones / Cláusulas adicionales</label>
+                        <textarea name="observacion" class="form-control" rows="2" placeholder="Opcional: condiciones especiales, aval, garantía, etc."></textarea>
+                    </div>
+                </div>
+
+                <div class="total-box p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <div class="small text-white-50">MONTO DEL PAGARÉ</div>
+                        <div class="fw-bold fs-3" id="montoDisplay">{{ 0|money }}</div>
+                    </div>
+                    <button type="submit" class="btn btn-light fw-bold px-4 py-2" style="color:#d81b60;">
+                        <i class="fas fa-check me-2"></i>Generar Pagaré
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var moneda = "{{ moneda }}";
+        var montoInicial = {{ s.get('monto', 0) }};
+
+        function numero_a_letras(n) {
+            var unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+            var especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
+            var decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+            var centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+            function tres(n) {
+                if (n === 0) return '';
+                var c = Math.floor(n / 100), r = n % 100;
+                if (r === 0) return c === 1 ? 'cien' : centenas[c];
+                var d = Math.floor(r / 10), u = r % 10, p = [];
+                if (c) p.push(centenas[c]);
+                if (d === 0) p.push(unidades[u]);
+                else if (d === 1) p.push(especiales[u]);
+                else if (d === 2 && u) p.push('veinti' + unidades[u]);
+                else if (u) p.push(decenas[d] + ' y ' + unidades[u]);
+                else p.push(decenas[d]);
+                return p.join(' ');
+            }
+
+            if (n === 0) return 'cero';
+            var partes = [];
+            var millones = Math.floor(n / 1000000);
+            var miles = Math.floor((n % 1000000) / 1000);
+            var resto = n % 1000;
+            if (millones) {
+                partes.push(millones === 1 ? 'un millón' : tres(millones) + ' millones');
+            }
+            if (miles) {
+                partes.push(miles === 1 ? 'mil' : tres(miles) + ' mil');
+            }
+            if (resto) partes.push(tres(resto));
+            return partes.join(' ');
+        }
+
+        function actualizarLetras() {
+            var monto = parseFloat(document.getElementById('monto').value) || 0;
+            var entero = Math.floor(monto);
+            var centavos = Math.round((monto - entero) * 100);
+            var texto = numero_a_letras(entero);
+            if (texto === 'uno') texto = 'un';
+            else if (texto.indexOf('uno ') === 0) texto = 'un' + texto.slice(3);
+            document.getElementById('montoLetras').textContent =
+                texto + ' con ' + (centavos < 10 ? '0' : '') + centavos + '/100 ' + moneda;
+            document.getElementById('montoDisplay').textContent = formatearMoneda(monto);
+        }
+
+        function toggleOrigen() {
+            var v = document.getElementById('origenSelect').value;
+            var wrap = document.getElementById('origenNumeroWrap');
+            wrap.style.display = v === 'manual' ? 'none' : 'block';
+        }
+
+        function formatearTelefono(el) {
+            var d = el.value.replace(/\D/g, '');
+            if (!d) { el.value = ''; return; }
+            if (d.slice(0, 2) === '54') { d = d.slice(2); }
+            d = d.replace(/^0+/, '');
+            var s = '+54';
+            if (d.charAt(0) === '9') { s += ' 9'; d = d.slice(1); }
+            if (d.length >= 4) { s += ' ' + d.slice(0, 4); d = d.slice(4); }
+            else { s += ' ' + d; el.value = s; return; }
+            if (d.length >= 6) { s += ' ' + d.slice(0, 2) + '-' + d.slice(2, 6); d = d.slice(6); }
+            else { s += ' ' + d; el.value = s; return; }
+            if (d) { s += ' ' + d.replace(/(\d{4})(?=\d)/g, '$1 '); }
+            el.value = s;
+        }
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.tagName === 'INPUT' && /telefono/i.test(e.target.name)) {
+                formatearTelefono(e.target);
+            }
+        });
+
+        actualizarLetras();
+    </script>
+</body>
+</html>

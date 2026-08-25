@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f5f9; font-family: Segoe UI, Tahoma, sans-serif; height: 100vh; display: flex; flex-direction: column; margin: 0; }
+        .navbar-custom { background: #0f172a; color: white; padding: 10px 20px; }
+        .card-module { border: none; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
+        .card-module:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="fw-bold"><i class="fas fa-cube text-info me-2"></i> Variedades Angie</span>
+            <span class="badge bg-secondary ms-2">Rol: {{ rol }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-light">Hola, <b>{{ nombre }}</b></span>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+    
+    <div class="container my-auto py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-dark">Panel Principal</h2>
+            <p class="text-muted">Selecciona el módulo en el que deseas trabajar hoy.</p>
+            {% if stock_bajo %}
+            <a href="/inventario" class="btn btn-outline-danger btn-sm mt-2">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                {{ stock_bajo|length }} producto(s) con stock bajo
+            </a>
+            {% endif %}
+        </div>
+        <div class="row g-4 justify-content-center">
+            {{ admin_panel_html | safe }}
+            <div class="col-md-4">
+                <a href="/facturas" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-file-invoice-dollar text-primary fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Facturación y Ventas</h5>
+                        <p class="text-muted small">Emitir comprobantes y ver historial.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/inventario" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-warehouse text-info fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Inventario</h5>
+                        <p class="text-muted small">Stock, entradas, salidas y alertas.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/reposicion" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-shopping-basket text-danger fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Reposición de Stock</h5>
+                        <p class="text-muted small">Mercadería por acabar y pedido a proveedores.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/faltantes" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Aviso de Faltantes</h5>
+                        <p class="text-muted small">Enviá la lista de faltantes a administradores o dueños por WhatsApp.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/clientes" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-users text-warning fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Clientes</h5>
+                        <p class="text-muted small">Registrar y administrar tus clientes.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/proveedores" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-truck text-secondary fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Proveedores</h5>
+                        <p class="text-muted small">Registrar y administrar tus proveedores.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/compras" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-cart-plus text-dark fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Compras de Mercancía</h5>
+                        <p class="text-muted small">Registra compras a proveedores; el stock se actualiza solo.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/productos" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-boxes text-success fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Productos y Servicios</h5>
+                        <p class="text-muted small">Catálogo de productos y precios.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/categorias" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-tags text-info fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Categorías</h5>
+                        <p class="text-muted small">Todos los productos separados por categoría.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/notas-credito" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-undo-alt text-danger fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Devoluciones y Notas de Crédito</h5>
+                        <p class="text-muted small">Registrar devoluciones y emitir notas de crédito.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/fiados" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-hand-holding-usd text-secondary fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Fiado Digital</h5>
+                        <p class="text-muted small">Lleva el producto ahora y abona en cuotas.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/pagares" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-file-signature text-primary fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Pagarés</h5>
+                        <p class="text-muted small">Genera documentos de promesa de pago imprimibles.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/caja" class="text-decoration-none">
+                    <div class="card card-module p-4 text-center">
+                        <i class="fas fa-cash-register text-success fa-3x mb-3"></i>
+                        <h5 class="fw-bold text-dark">Caja</h5>
+                        <p class="text-muted small">Abre la caja del día, registra movimientos y cierra el arqueo.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

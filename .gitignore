@@ -1,4 +1,6 @@
-node_modules/
-data/
-*.log
-.env
+__pycache__/
+*.pyc
+app-android/node_modules/
+app-android/.expo/
+app-android/.git/
+app-android/

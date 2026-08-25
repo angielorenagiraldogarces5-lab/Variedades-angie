@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Variedades Angie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #ffd6e8 0%, #ffb3d6 100%); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; margin: 0; }
+        .navbar-custom { background: #d81b60; color: #fff; padding: 10px 20px; box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35); }
+        .card-table { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); overflow: hidden; }
+        .card-table .table thead th { background: #ff6bb3; color: #fff; border: none; font-size: 13px; }
+        .card-table .table td, .card-table .table th { vertical-align: middle; }
+        .btn-pink { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); border: none; color: #fff; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 10px rgba(255, 107, 179, 0.35); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-pink:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 8px 16px rgba(255, 107, 179, 0.45); }
+        .btn-outline-purple { border: 1.5px solid #ff6bb3; color: #ff6bb3; border-radius: 10px; font-weight: 600; }
+        .btn-outline-purple:hover { background: #ff6bb3; color: #fff; }
+        .btn-danger-soft { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; border-radius: 10px; font-weight: 600; }
+        .btn-danger-soft:hover { background: #c2185b; color: #fff; }
+        .page-title { color: #d81b60; font-weight: 800; }
+        .page-subtitle { color: #d9a5c0; }
+        .flash-success { background: #e9fbe9; border: 1px solid #ff6bb3; color: #2e7d32; border-radius: 12px; }
+        .flash-danger { background: #ffe5ec; border: 1px solid #ff8fc0; color: #c2185b; border-radius: 12px; }
+        .modal-content { border-radius: 18px; border: none; }
+        .modal-header { background: linear-gradient(135deg, #ff6bb3, #ff9ec9); color: #fff; border-radius: 18px 18px 0 0; }
+        .form-control, .form-select { border: 2px solid #ffd6e8; border-radius: 10px; }
+        .form-control:focus, .form-select:focus { border-color: #ff6bb3; box-shadow: 0 0 0 4px rgba(255, 107, 179, 0.15); }
+        .form-label { color: #d81b60; font-weight: 600; font-size: 13px; }
+        .stat-card { border: none; border-radius: 18px; box-shadow: 0 10px 30px rgba(216, 27, 96, 0.2); }
+        .stat-card .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .badge-entrada { background: #e9fbe9; color: #2e7d32; border: 1px solid #9ed89e; }
+        .badge-salida { background: #ffe5ec; color: #c2185b; border: 1px solid #ff8fc0; }
+        .badge-cat { background: #ffe3ef; color: #d81b60; border: 1px solid #ff9ec9; }
+        .alert-stock { background: #fff4e5; border: 1px solid #ffc46b; color: #b26a00; border-radius: 12px; }
+        .filter-bar { background: #fff; border: 2px solid #ffd6e8; border-radius: 14px; padding: 14px 16px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/dashboard" class="fw-bold text-white text-decoration-none"><i class="fas fa-cube me-2"></i> Variedades Angie</a>
+            <span class="badge bg-light ms-2" style="color:#d81b60;">Rol: {{ session.get('rol') }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="small text-white">Hola, <b>{{ session.get('nombre') }}</b></span>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="page-title mb-0"><i class="fas fa-warehouse me-2"></i>Inventario</h2>
+                <p class="page-subtitle mb-0">Controla el stock, valoriza tu mercadería y registra movimientos y conteos.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/reposicion" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-shopping-basket me-2"></i>Reponer
+                </a>
+                <a href="/inventario/exportar/stock" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-file-excel me-2"></i>Exportar stock
+                </a>
+                <a href="/inventario/exportar/movimientos?{{ query }}" class="btn btn-outline-purple px-3 py-2">
+                    <i class="fas fa-file-csv me-2"></i>Exportar movimientos
+                </a>
+                <button class="btn btn-outline-purple px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalConteo">
+                    <i class="fas fa-clipboard-check me-2"></i>Conteo Físico
+                </button>
+                <button class="btn btn-pink px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalMovimiento">
+                    <i class="fas fa-exchange-alt me-2"></i>Nuevo Movimiento
+                </button>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert flash-{{ category }} py-2 small mb-3">
+                        {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>{% else %}<i class="fas fa-exclamation-circle me-1"></i>{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if stock_bajo %}
+        <div class="alert alert-stock d-flex align-items-center mb-4">
+            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+            <div>
+                <b>Hay {{ stock_bajo|length }} producto(s) con stock bajo o agotado:</b>
+                {% for pid, p in stock_bajo %}
+                    <a href="/inventario/producto/{{ pid }}" class="badge me-2 text-decoration-none" style="background:#ffe5ec; color:#c2185b;">{{ p.nombre }} ({{ '%g'|format(p.stock|float) }})</a>
+                {% endfor %}
+                <a href="/reposicion" class="ms-2 fw-bold" style="color:#ff6bb3;">Ver qué reponer</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9);"><i class="fas fa-dollar-sign"></i></div>
+                        <div>
+                            <div class="small text-muted">Valor del inventario</div>
+                            <div class="fw-bold fs-6" style="color:#d81b60;">{{ stats.valor_total|money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#4db6ac,#26a69a);"><i class="fas fa-boxes"></i></div>
+                        <div>
+                            <div class="small text-muted">Productos</div>
+                            <div class="fw-bold fs-6" style="color:#26a69a;">{{ stats.productos_total }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#c2185b,#e57373);"><i class="fas fa-times-circle"></i></div>
+                        <div>
+                            <div class="small text-muted">Agotados</div>
+                            <div class="fw-bold fs-6" style="color:#c2185b;">{{ stats.agotados }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#ff9800,#ffb74d);"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="small text-muted">Stock bajo</div>
+                            <div class="fw-bold fs-6" style="color:#e65100;">{{ stats.stock_bajo }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#2e7d32,#66bb6a);"><i class="fas fa-arrow-down"></i></div>
+                        <div>
+                            <div class="small text-muted">Entradas (mes)</div>
+                            <div class="fw-bold fs-6" style="color:#2e7d32;">{{ '%g'|format(stats.entradas_mes|float) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon text-white" style="background:linear-gradient(135deg,#d32f2f,#ef5350);"><i class="fas fa-arrow-up"></i></div>
+                        <div>
+                            <div class="small text-muted">Salidas (mes)</div>
+                            <div class="fw-bold fs-6" style="color:#d32f2f;">{{ '%g'|format(stats.salidas_mes|float) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-7">
+                <div class="card card-table h-100">
+                    <div class="card-header py-3 px-4 fw-bold" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                        <i class="fas fa-boxes me-2"></i>Estado del stock
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th>Stock</th>
+                                    <th>Stock físico</th>
+                                    <th>Stock mín.</th>
+                                    <th>Costo</th>
+                                    <th>Valor</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Historial</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pid, p in productos.items() %}
+                                <tr>
+                                    <td class="fw-bold" style="color:#d81b60;">{{ pid }}</td>
+                                    <td class="fw-bold text-dark">
+                                        <i class="fas fa-cube me-2" style="color:#ff6bb3;"></i>{{ p.nombre }}
+                                        {% if p.categoria %}<span class="badge badge-cat ms-1">{{ p.categoria }}</span>{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.control_stock %}
+                                            <span class="fw-bold" style="color:#2e7d32;">{{ '%g'|format(p.stock|default(0)|float) }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Sin control</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.control_stock %}
+                                            <input type="number" class="form-control form-control-sm stock-fisico-input"
+                                                   step="any" min="0" data-pid="{{ pid }}"
+                                                   value="{{ p.stock_fisico if p.stock_fisico is not none else '' }}"
+                                                   placeholder="—" style="width:110px;"
+                                                   title="Mercancía física en el local">
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.control_stock %}
+                                            {{ '%g'|format(p.stock_minimo|default(0)|float) }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ p.costo|default(0)|money }}</td>
+                                    <td class="fw-bold">{{ (p.stock|default(0)|float * p.costo|default(0)|float)|money }}</td>
+                                    <td>
+                                        {% if not p.control_stock %}
+                                            <span class="badge bg-secondary">Sin control</span>
+                                        {% elif p.stock|default(0)|float <= 0 %}
+                                            <span class="badge badge-salida"><i class="fas fa-times-circle me-1"></i>Agotado</span>
+                                        {% elif p.stock|default(0)|float <= p.stock_minimo|default(0)|float %}
+                                            <span class="badge badge-salida"><i class="fas fa-exclamation-triangle me-1"></i>Stock bajo</span>
+                                        {% else %}
+                                            <span class="badge badge-entrada"><i class="fas fa-check-circle me-1"></i>Disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/inventario/producto/{{ pid }}" class="btn btn-sm btn-outline-purple" title="Ver historial del producto">
+                                            <i class="fas fa-history"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-box-open fa-2x mb-2 d-block"></i>No hay productos registrados.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card card-table h-100">
+                    <div class="card-header py-3 px-4 fw-bold" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                        <i class="fas fa-tags me-2"></i>Valor por categoría
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th class="text-center">Productos</th>
+                                    <th class="text-end">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat, datos in categorias %}
+                                <tr>
+                                    <td class="fw-bold text-dark"><i class="fas fa-tag me-2" style="color:#ff6bb3;"></i>{{ cat }}</td>
+                                    <td class="text-center">{{ datos.cantidad }}</td>
+                                    <td class="text-end fw-bold">{{ datos.valor|money }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Sin productos registrados.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-table mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                <span class="fw-bold"><i class="fas fa-history me-2"></i>Historial de movimientos</span>
+                <span class="badge bg-light" style="color:#d81b60;">{{ movimientos|length }} registro(s)</span>
+            </div>
+            <form method="GET" action="/inventario" class="filter-bar mx-3 mt-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label mb-1">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="Entrada" {% if request.args.get('tipo') == 'Entrada' %}selected{% endif %}>Entrada</option>
+                            <option value="Salida" {% if request.args.get('tipo') == 'Salida' %}selected{% endif %}>Salida</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1">Producto</label>
+                        <select name="pid" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            {% for pid, p in productos.items() %}
+                            <option value="{{ pid }}" {% if request.args.get('pid') == pid %}selected{% endif %}>{{ p.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label mb-1">Desde</label>
+                        <input type="date" name="desde" class="form-control form-control-sm" value="{{ request.args.get('desde', '') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label mb-1">Hasta</label>
+                        <input type="date" name="hasta" class="form-control form-control-sm" value="{{ request.args.get('hasta', '') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label mb-1">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm" placeholder="Producto, motivo..." value="{{ request.args.get('q', '') }}">
+                    </div>
+                    <div class="col-md-1 d-flex gap-1">
+                        <button class="btn btn-pink btn-sm w-100"><i class="fas fa-filter"></i></button>
+                        <a href="/inventario" class="btn btn-outline-purple btn-sm" title="Limpiar filtros"><i class="fas fa-times"></i></a>
+                    </div>
+                </div>
+            </form>
+            <div class="table-responsive mt-2">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                            {% if session.get('rol') in ['Admin', 'Dueño'] %}<th class="text-end">Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mid, m in movimientos %}
+                        <tr>
+                            <td class="fw-bold" style="color:#d81b60;">{{ mid }}</td>
+                            <td>{{ m.fecha }}</td>
+                            <td>
+                                {% if m.tipo == 'Entrada' %}
+                                    <span class="badge badge-entrada"><i class="fas fa-arrow-down me-1"></i>Entrada</span>
+                                {% else %}
+                                    <span class="badge badge-salida"><i class="fas fa-arrow-up me-1"></i>Salida</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-dark">{{ m.producto }}</td>
+                            <td class="fw-bold">{{ '%g'|format(m.cantidad|float) }}</td>
+                            <td class="small text-muted">{{ m.motivo }}{% if m.referencia %} <span class="badge bg-light text-muted">Ref: {{ m.referencia }}</span>{% endif %}</td>
+                            <td>{{ m.usuario }}</td>
+                            {% if session.get('rol') in ['Admin', 'Dueño'] %}
+                            <td class="text-end">
+                                <form method="POST" action="/inventario/movimiento/{{ mid }}/eliminar" class="d-inline"
+                                      onsubmit="return confirm('¿Eliminar este movimiento? Se revertirá el stock.');">
+                                    <button class="btn btn-sm btn-danger-soft" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>No hay movimientos que coincidan con los filtros.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-table mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:linear-gradient(135deg,#ff6bb3,#ff9ec9); color:#fff; border:none;">
+                <span class="fw-bold"><i class="fas fa-clipboard-check me-2"></i>Conteos físicos / ajustes</span>
+                <span class="badge bg-light" style="color:#d81b60;">{{ conteos|length }} conteo(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Stock sistema</th>
+                            <th>Stock real</th>
+                            <th>Diferencia</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                            {% if session.get('rol') in ['Admin', 'Dueño'] %}<th class="text-end">Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cid, c in conteos %}
+                        <tr>
+                            <td class="fw-bold" style="color:#d81b60;">{{ cid }}</td>
+                            <td>{{ c.fecha }}</td>
+                            <td class="fw-bold text-dark">{{ c.producto }}</td>
+                            <td>{{ '%g'|format(c.stock_sistema|float) }}</td>
+                            <td class="fw-bold">{{ '%g'|format(c.stock_real|float) }}</td>
+                            <td>
+                                {% if c.diferencia > 0 %}
+                                    <span class="badge badge-entrada"><i class="fas fa-arrow-down me-1"></i>+{{ '%g'|format(c.diferencia|float) }}</span>
+                                {% elif c.diferencia < 0 %}
+                                    <span class="badge badge-salida"><i class="fas fa-arrow-up me-1"></i>{{ '%g'|format(c.diferencia|float) }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Sin cambio</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ c.motivo }}</td>
+                            <td>{{ c.usuario }}</td>
+                            {% if session.get('rol') in ['Admin', 'Dueño'] %}
+                            <td class="text-end">
+                                <form method="POST" action="/inventario/conteo/{{ cid }}/eliminar" class="d-inline"
+                                      onsubmit="return confirm('¿Eliminar este conteo? Se revertirá el ajuste de stock.');">
+                                    <button class="btn btn-sm btn-danger-soft" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-clipboard-check fa-2x mb-2 d-block"></i>Aún no se realizaron conteos físicos.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalMovimiento" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-exchange-alt me-2"></i>Nuevo Movimiento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/inventario/movimiento">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de movimiento *</label>
+                            <select name="tipo" class="form-select">
+                                <option value="Entrada">Entrada (ingresa stock)</option>
+                                <option value="Salida">Salida (sale stock)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Producto *</label>
+                            <select name="pid" class="form-select" required>
+                                <option value="">— Seleccione un producto —</option>
+                                {% for pid, p in productos.items() %}
+                                    {% if p.control_stock %}
+                                    <option value="{{ pid }}">{{ p.nombre }} (stock: {{ '%g'|format(p.stock|default(0)|float) }})</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Cantidad *</label>
+                                    <input type="number" name="cantidad" class="form-control" step="any" min="0.01" placeholder="Ej. 10" required>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha</label>
+                                    <input type="date" name="fecha" class="form-control" value="{{ fecha_hoy }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Motivo</label>
+                            <input type="text" name="motivo" class="form-control" placeholder="Ej. Compra a proveedor, merma, ajuste...">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-purple" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-pink px-4"><i class="fas fa-save me-2"></i>Registrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConteo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-clipboard-check me-2"></i>Conteo Físico / Ajuste</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/inventario/conteo">
+                    <div class="modal-body">
+                        <div class="alert alert-stock py-2 small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>Indicá cuántas unidades <b>reales</b> contaste. El sistema ajustará el stock automáticamente según la diferencia.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Producto *</label>
+                            <select name="pid" class="form-select" id="conteoPid" required>
+                                <option value="">— Seleccione un producto —</option>
+                                {% for pid, p in productos.items() %}
+                                    {% if p.control_stock %}
+                                    <option value="{{ pid }}" data-stock="{{ '%g'|format(p.stock|default(0)|float) }}">{{ p.nombre }} (stock: {{ '%g'|format(p.stock|default(0)|float) }})</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Stock en sistema</label>
+                                    <input type="text" class="form-control" id="conteoSistema" value="—" readonly>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Stock real (contado) *</label>
+                                    <input type="number" name="stock_real" class="form-control" step="any" min="0" placeholder="Ej. 12" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha</label>
+                                    <input type="date" name="fecha" class="form-control" value="{{ fecha_hoy }}">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Motivo</label>
+                                    <input type="text" name="motivo" class="form-control" placeholder="Ej. conteo de cierre">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-purple" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-pink px-4"><i class="fas fa-save me-2"></i>Ajustar stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('conteoPid').addEventListener('change', function () {
+            var opt = this.options[this.selectedIndex];
+            document.getElementById('conteoSistema').value = opt && opt.dataset.stock ? opt.dataset.stock : '—';
+        });
+
+        document.querySelectorAll('.stock-fisico-input').forEach(function (input) {
+            input.addEventListener('change', function () {
+                var pid = input.dataset.pid;
+                var valor = input.value.trim();
+                if (valor === '') { valor = '0'; }
+                var fd = new FormData();
+                fd.append('pid', pid);
+                fd.append('stock_fisico', valor);
+                input.classList.remove('is-valid', 'is-invalid');
+                fetch('/inventario/stock-fisico', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.ok) {
+                            input.classList.add('is-valid');
+                            setTimeout(function () { input.classList.remove('is-valid'); }, 1500);
+                        } else {
+                            input.classList.add('is-invalid');
+                            alert(d.msg);
+                        }
+                    })
+                    .catch(function () {
+                        input.classList.add('is-invalid');
+                        alert('Error al guardar el stock físico.');
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
