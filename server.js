@@ -30,6 +30,9 @@ app.use('/api/cashregister', require('./src/routes/cashregister'));
 app.use('/api/daily-fiados', require('./src/routes/fiados_cortos'));
 app.use('/api/accounting', require('./src/routes/accounting'));
 
+// Health check para mantener vivo en Render / Railway / etc.
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 
 // Cualquier otra ruta devuelve la aplicación
