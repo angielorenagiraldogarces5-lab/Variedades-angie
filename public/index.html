@@ -362,6 +362,7 @@
           <button class="tab-btn" onclick="switchAccountingTab('balance')">⚖️ Balance General</button>
           <button class="tab-btn" onclick="switchAccountingTab('flujo')">💧 Flujo de Caja</button>
           <button class="tab-btn" onclick="switchAccountingTab('cuentas')">🏦 Plan de Cuentas</button>
+          <button class="tab-btn" onclick="switchAccountingTab('deudas')">📋 Deudas y Documentos</button>
         </div>
 
         <!-- RESUMEN -->
@@ -415,6 +416,18 @@
             <button class="btn btn-primary" onclick="openAccountModal()">＋ Nueva cuenta</button>
           </div>
           <div class="table-wrap"><table id="acct-accounts-table"></table></div>
+        </div>
+
+        <!-- DEUDAS Y DOCUMENTOS -->
+        <div id="acct-tab-deudas" class="acct-panel hidden">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem">
+            <button class="btn btn-primary" onclick="loadDebtReport()">📊 Generar Reporte de Deudas</button>
+            <button class="btn btn-primary" onclick="openCommitmentModal()">📝 Nuevo Compromiso de Pago</button>
+            <button class="btn btn-primary" onclick="openPagareModal()">📄 Nuevo Pagaré</button>
+          </div>
+          <div id="acct-debt-report"></div>
+          <div id="acct-commitments-list" style="margin-top:1.5rem"></div>
+          <div id="acct-pagares-list" style="margin-top:1.5rem"></div>
         </div>
       </section>
 

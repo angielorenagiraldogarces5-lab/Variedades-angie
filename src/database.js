@@ -258,6 +258,47 @@ CREATE TABLE IF NOT EXISTS daily_fiado_payments (
 );
 CREATE INDEX IF NOT EXISTS idx_daily_fiado_payments_fiado ON daily_fiado_payments(fiado_id);
 
+/* ============ DOCUMENTOS DE DEUDA ============ */
+/* Compromisos de pago (documento simple donde el cliente se compromete a pagar) */
+CREATE TABLE IF NOT EXISTS payment_commitments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  number INTEGER NOT NULL UNIQUE,
+  client_name TEXT NOT NULL,
+  client_document TEXT DEFAULT '',
+  client_phone TEXT DEFAULT '',
+  client_address TEXT DEFAULT '',
+  debt_amount REAL NOT NULL DEFAULT 0,
+  debt_description TEXT DEFAULT '',
+  due_date TEXT,
+  terms TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+/* Pagarés formales (documento legal con cláusulas) */
+CREATE TABLE IF NOT EXISTS pagares_doc (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  number INTEGER NOT NULL UNIQUE,
+  client_name TEXT NOT NULL,
+  client_document TEXT DEFAULT '',
+  client_phone TEXT DEFAULT '',
+  client_address TEXT DEFAULT '',
+  creditor_name TEXT DEFAULT 'Variedades Angie',
+  creditor_document TEXT DEFAULT '',
+  amount REAL NOT NULL DEFAULT 0,
+  amount_words TEXT DEFAULT '',
+  interest_rate REAL DEFAULT 0,
+  issue_date TEXT NOT NULL,
+  due_date TEXT,
+  origin_type TEXT DEFAULT '',
+  origin_number TEXT DEFAULT '',
+  terms TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'vigente' CHECK (status IN ('vigente','pagado','cancelado')),
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 /* ============ CONTABILIDAD ============ */
 /* Plan de cuentas */
 CREATE TABLE IF NOT EXISTS accounts (
