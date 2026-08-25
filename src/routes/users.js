@@ -64,6 +64,30 @@ router.get('/commissions', authenticate, (req, res) => {
   });
 });
 
+/* Lista básica de usuarios activos (para restablecer contraseñas).
+   Accesible a cualquier usuario autenticado */
+router.get('/list', authenticate, (req, res) => {
+  const users = db.prepare(
+    "SELECT id, username, full_name, role FROM users WHERE active = 1 ORDER BY full_name"
+  ).all();
+  res.json(users);
+});
+
+/* Restablecer contraseña de otro usuario.
+   Accesible a cualquier usuario autenticado (admin o trabajador) */
+router.post('/:id/reset-password', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { new_password } = req.body || {};
+  if (!new_password) return res.status(400).json({ error: 'La nueva contraseña es obligatoria' });
+  if (new_password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+
+  const user = db.prepare('SELECT id, full_name FROM users WHERE id = ? AND active = 1').get(id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado o inactivo' });
+
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(new_password, 10), id);
+  res.json({ message: `Contraseña de ${user.full_name} restablecida correctamente` });
+});
+
 router.use(authenticate, requireAdmin);
 
 router.get('/', (req, res) => {

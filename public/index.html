@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Variedades Angie — Sistema de Inventario</title>
-  <link rel="stylesheet" href="/css/styles.css?v=20260824h">
+  <link rel="stylesheet" href="/css/styles.css?v=20260825">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛍️</text></svg>">
 </head>
 <body>
@@ -42,15 +42,20 @@
         <button data-view="pedidos" class="nav-item"><span>📋</span> Pedidos</button>
         <button data-view="facturas" class="nav-item"><span>📄</span> Facturas</button>
         <button data-view="cobros" class="nav-item"><span>💳</span> Cobros (fiados)</button>
+        <button data-view="fiados_cortos" class="nav-item"><span>⚡</span> Fiados del Día</button>
         <button data-view="comisiones" class="nav-item"><span>💰</span> Comisiones</button>
         <button data-view="productos" class="nav-item"><span>📦</span> Productos</button>
         <button data-view="movimientos" class="nav-item"><span>🔄</span> Movimientos</button>
         <button data-view="clientes" class="nav-item"><span>👤</span> Clientes</button>
+        <button data-view="proveedores" class="nav-item admin-only"><span>🚚</span> Proveedores</button>
+        <button data-view="caja" class="nav-item"><span>💵</span> Caja / Arqueo</button>
+        <button data-view="contabilidad" class="nav-item admin-only"><span>📒</span> Contabilidad</button>
         <button data-view="usuarios" class="nav-item admin-only"><span>👥</span> Colaboradores</button>
         <button data-view="config" class="nav-item admin-only"><span>⚙️</span> Configuración</button>
       </nav>
       <div class="sidebar-footer">
-        <button id="btn-change-password" class="btn-link">🔑 Cambiar contraseña</button>
+        <button id="btn-change-password" class="btn-link">🔑 Mi contraseña</button>
+        <button id="btn-reset-other-password" class="btn-link">🔑 Resetear contraseña de otro</button>
         <button id="btn-logout" class="btn-link danger">🚪 Cerrar sesión</button>
       </div>
     </aside>
@@ -225,7 +230,10 @@
       <section id="view-facturas" class="view">
         <header class="view-header">
           <h2>Facturas emitidas</h2>
-          <button class="btn btn-outline" onclick="loadInvoices()">↻ Actualizar</button>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="loadInvoices()">↻ Actualizar</button>
+            <button class="btn btn-danger admin-only" onclick="deleteAllInvoices()">🗑 Limpiar historial</button>
+          </div>
         </header>
         <div class="toolbar">
           <select id="invoice-status-filter" onchange="loadInvoices()">
@@ -267,6 +275,28 @@
         <div id="customer-cards-grid" class="cards-grid hidden"></div>
       </section>
 
+      <!-- Fiados del día -->
+      <section id="view-fiados_cortos" class="view">
+        <header class="view-header">
+          <h2>Fiados del Día</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="loadDailyFiados()">↻ Actualizar</button>
+            <button class="btn btn-primary" onclick="openDailyFiadoModal()">＋ Nuevo fiado</button>
+          </div>
+        </header>
+        <div id="daily-fiados-stats"></div>
+        <div class="toolbar">
+          <input type="search" id="df-search" placeholder="Buscar cliente o descripción..." oninput="debouncedLoadDailyFiados()">
+          <select id="df-status-filter" onchange="loadDailyFiados()">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="vencida">Vencidos</option>
+            <option value="pagada">Pagados</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table id="daily-fiados-table"></table></div>
+      </section>
+
       <!-- Comisiones -->
       <section id="view-comisiones" class="view">
         <header class="view-header">
@@ -288,6 +318,104 @@
           <button class="btn btn-primary" onclick="openCustomerModal()">＋ Nuevo cliente</button>
         </header>
         <div class="table-wrap"><table id="customers-table"></table></div>
+      </section>
+
+      <!-- Proveedores -->
+      <section id="view-proveedores" class="view">
+        <header class="view-header">
+          <h2>Proveedores</h2>
+          <button class="btn btn-primary" onclick="openSupplierModal()">＋ Nuevo proveedor</button>
+        </header>
+        <div class="toolbar">
+          <input type="search" id="supplier-search" placeholder="Buscar por nombre, documento o teléfono..." oninput="debouncedLoadSuppliers()">
+        </div>
+        <div class="table-wrap"><table id="suppliers-table"></table></div>
+      </section>
+
+      <!-- Caja / Arqueo -->
+      <section id="view-caja" class="view">
+        <header class="view-header">
+          <h2>Caja / Arqueo</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="loadCashRegisters()">↻ Actualizar</button>
+            <button class="btn btn-primary" onclick="openCashRegisterModal()">＋ Abrir caja</button>
+          </div>
+        </header>
+        <div id="cashregister-content"></div>
+        <div class="table-wrap"><table id="cashregisters-table"></table></div>
+      </section>
+
+      <!-- Contabilidad -->
+      <section id="view-contabilidad" class="view">
+        <header class="view-header">
+          <h2>📒 Contabilidad</h2>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="loadAccountingSummary()">↻ Actualizar</button>
+          </div>
+        </header>
+
+        <!-- Tabs de contabilidad -->
+        <div class="tabs" id="acct-tabs">
+          <button class="tab-btn active" onclick="switchAccountingTab('resumen')">📊 Resumen</button>
+          <button class="tab-btn" onclick="switchAccountingTab('diario')">📒 Libro Diario</button>
+          <button class="tab-btn" onclick="switchAccountingTab('resultado')">📈 Estado de Resultados</button>
+          <button class="tab-btn" onclick="switchAccountingTab('balance')">⚖️ Balance General</button>
+          <button class="tab-btn" onclick="switchAccountingTab('flujo')">💧 Flujo de Caja</button>
+          <button class="tab-btn" onclick="switchAccountingTab('cuentas')">🏦 Plan de Cuentas</button>
+        </div>
+
+        <!-- RESUMEN -->
+        <div id="acct-tab-resumen" class="acct-panel active">
+          <div id="acct-summary-stats"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem">
+            <button class="btn btn-primary" onclick="generateAllEntries()">⚙️ Generar asientos del período</button>
+          </div>
+        </div>
+
+        <!-- LIBRO DIARIO -->
+        <div id="acct-tab-diario" class="acct-panel hidden">
+          <div class="toolbar">
+            <label class="toolbar-label">Desde <input type="date" id="acct-diario-from" onchange="loadJournalEntries()"></label>
+            <label class="toolbar-label">Hasta <input type="date" id="acct-diario-to" onchange="loadJournalEntries()"></label>
+            <input type="search" id="acct-diario-search" placeholder="Buscar descripción..." oninput="debouncedLoadJournal()">
+            <button class="btn btn-primary" onclick="openJournalEntryModal()">＋ Asiento manual</button>
+          </div>
+          <div class="table-wrap"><table id="acct-journal-table"></table></div>
+        </div>
+
+        <!-- ESTADO DE RESULTADOS -->
+        <div id="acct-tab-resultado" class="acct-panel hidden">
+          <div class="toolbar">
+            <label class="toolbar-label">Desde <input type="date" id="acct-resultado-from" onchange="loadIncomeStatement()"></label>
+            <label class="toolbar-label">Hasta <input type="date" id="acct-resultado-to" onchange="loadIncomeStatement()"></label>
+          </div>
+          <div id="acct-income-statement"></div>
+        </div>
+
+        <!-- BALANCE GENERAL -->
+        <div id="acct-tab-balance" class="acct-panel hidden">
+          <div class="toolbar">
+            <label class="toolbar-label">Fecha de corte <input type="date" id="acct-balance-date" onchange="loadBalanceSheet()"></label>
+          </div>
+          <div id="acct-balance-sheet"></div>
+        </div>
+
+        <!-- FLUJO DE CAJA -->
+        <div id="acct-tab-flujo" class="acct-panel hidden">
+          <div class="toolbar">
+            <label class="toolbar-label">Desde <input type="date" id="acct-flujo-from" onchange="loadCashFlow()"></label>
+            <label class="toolbar-label">Hasta <input type="date" id="acct-flujo-to" onchange="loadCashFlow()"></label>
+          </div>
+          <div id="acct-cash-flow"></div>
+        </div>
+
+        <!-- PLAN DE CUENTAS -->
+        <div id="acct-tab-cuentas" class="acct-panel hidden">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem">
+            <button class="btn btn-primary" onclick="openAccountModal()">＋ Nueva cuenta</button>
+          </div>
+          <div class="table-wrap"><table id="acct-accounts-table"></table></div>
+        </div>
       </section>
 
       <!-- Configuración -->
@@ -348,6 +476,6 @@
 
   <div id="toast-container"></div>
 
-  <script src="/js/app.js?v=20260824i"></script>
+  <script src="/js/app.js?v=20260825"></script>
 </body>
 </html>

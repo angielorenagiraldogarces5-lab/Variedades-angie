@@ -25,6 +25,10 @@ app.use('/api/collections', require('./src/routes/collections'));
 app.use('/api/invoices', require('./src/routes/invoices'));
 app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/settings', require('./src/routes/settings'));
+app.use('/api/suppliers', require('./src/routes/suppliers'));
+app.use('/api/cashregister', require('./src/routes/cashregister'));
+app.use('/api/daily-fiados', require('./src/routes/fiados_cortos'));
+app.use('/api/accounting', require('./src/routes/accounting'));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 

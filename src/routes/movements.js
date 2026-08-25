@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const db = require('../database');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 
 router.get('/', authenticate, (req, res) => {
   const { product_id, type, from, to } = req.query;
@@ -70,6 +70,30 @@ router.post('/', authenticate, (req, res) => {
   } catch (e) {
     db.exec('ROLLBACK');
     res.status(e.status || 500).json({ error: e.message || 'Error al registrar el movimiento' });
+  }
+});
+
+router.delete('/:id', authenticate, requireAdmin, (req, res) => {
+  const movement = db.prepare('SELECT * FROM movements WHERE id = ?').get(req.params.id);
+  if (!movement) return res.status(404).json({ error: 'Movimiento no encontrado' });
+
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(movement.product_id);
+  if (!product) return res.status(404).json({ error: 'Producto asociado no encontrado' });
+
+  const newStock = product.stock - movement.quantity;
+  if (newStock < 0) {
+    return res.status(400).json({ error: `No se puede eliminar: el stock quedaría en ${newStock} (negativo)` });
+  }
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare("UPDATE products SET stock = ?, updated_at = datetime('now','localtime') WHERE id = ?").run(newStock, product.id);
+    db.prepare('DELETE FROM movements WHERE id = ?').run(req.params.id);
+    db.exec('COMMIT');
+    res.json({ message: `Movimiento eliminado. Stock restaurado: ${newStock}`, stock: newStock });
+  } catch (e) {
+    db.exec('ROLLBACK');
+    res.status(500).json({ error: 'Error al eliminar el movimiento' });
   }
 });
 

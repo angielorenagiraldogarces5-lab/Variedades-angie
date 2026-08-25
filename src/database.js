@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS fiado_cards (
   address TEXT DEFAULT '',
   item_code TEXT DEFAULT '',
   item_name TEXT DEFAULT '',
-  payment_type TEXT NOT NULL CHECK (payment_type IN ('semanal','quincenal','mensual','colaborador')),
+  payment_type TEXT NOT NULL CHECK (payment_type IN ('diario','8dias','semanal','quincenal','mensual','colaborador')),
   fiado_date TEXT NOT NULL,
   amount REAL NOT NULL CHECK (amount > 0),
   paid_amount REAL NOT NULL DEFAULT 0 CHECK (paid_amount >= 0),
@@ -177,6 +177,48 @@ CREATE TABLE IF NOT EXISTS fiado_card_items (
   line_total REAL NOT NULL DEFAULT 0 CHECK (line_total >= 0)
 );
 
+/* Proveedores */
+CREATE TABLE IF NOT EXISTS suppliers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  document TEXT DEFAULT '',
+  phone TEXT DEFAULT '',
+  email TEXT DEFAULT '',
+  address TEXT DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+/* Caja (arqueo de cajas) */
+CREATE TABLE IF NOT EXISTS cash_registers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  number INTEGER NOT NULL UNIQUE,
+  opened_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  closed_at TEXT,
+  cashier_name TEXT NOT NULL,
+  initial_amount REAL NOT NULL DEFAULT 0 CHECK (initial_amount >= 0),
+  total_income REAL NOT NULL DEFAULT 0,
+  total_expenses REAL NOT NULL DEFAULT 0,
+  expected_total REAL NOT NULL DEFAULT 0,
+  counted_amount REAL,
+  difference REAL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'abierta' CHECK (status IN ('abierta','cerrada')),
+  open_notes TEXT DEFAULT '',
+  close_notes TEXT DEFAULT '',
+  closed_by TEXT DEFAULT ''
+);
+
+/* Movimientos de caja */
+CREATE TABLE IF NOT EXISTS cash_movements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cash_register_id INTEGER NOT NULL REFERENCES cash_registers(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('ingreso','egreso')),
+  concept TEXT NOT NULL,
+  amount REAL NOT NULL CHECK (amount > 0),
+  user_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 CREATE INDEX IF NOT EXISTS idx_fiado_cards_status ON fiado_cards(status);
@@ -184,6 +226,98 @@ CREATE INDEX IF NOT EXISTS idx_fiado_payments_card ON fiado_payments(card_id);
 CREATE INDEX IF NOT EXISTS idx_fiado_card_items_card ON fiado_card_items(card_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+
+/* Fiados del día: plazos cortos (diario, 8 días, semanal, etc.) */
+CREATE TABLE IF NOT EXISTS daily_fiados (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_name TEXT NOT NULL,
+  phone TEXT DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  amount REAL NOT NULL CHECK (amount > 0),
+  paid_amount REAL NOT NULL DEFAULT 0 CHECK (paid_amount >= 0),
+  payment_type TEXT NOT NULL CHECK (payment_type IN ('diario','8dias','semanal','quincenal','mensual')),
+  fiado_date TEXT NOT NULL,
+  due_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendiente' CHECK (status IN ('pendiente','pagada','vencida')),
+  notes TEXT DEFAULT '',
+  user_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_daily_fiados_status ON daily_fiados(status);
+CREATE INDEX IF NOT EXISTS idx_daily_fiados_due ON daily_fiados(due_date);
+
+CREATE TABLE IF NOT EXISTS daily_fiado_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fiado_id INTEGER NOT NULL REFERENCES daily_fiados(id) ON DELETE CASCADE,
+  amount REAL NOT NULL CHECK (amount > 0),
+  method TEXT NOT NULL DEFAULT 'efectivo' CHECK (method IN ('efectivo','transferencia','otro')),
+  notes TEXT DEFAULT '',
+  user_id INTEGER REFERENCES users(id),
+  payment_date TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_daily_fiado_payments_fiado ON daily_fiado_payments(fiado_id);
+
+/* ============ CONTABILIDAD ============ */
+/* Plan de cuentas */
+CREATE TABLE IF NOT EXISTS accounts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('activo','pasivo','patrimonio','ingreso','gasto')),
+  parent_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+/* Asientos contables (libro diario) */
+CREATE TABLE IF NOT EXISTS journal_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  number INTEGER NOT NULL UNIQUE,
+  date TEXT NOT NULL,
+  description TEXT NOT NULL,
+  source TEXT DEFAULT '',
+  source_id INTEGER,
+  user_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+/* Líneas del asiento (débito / crédito) */
+CREATE TABLE IF NOT EXISTS journal_lines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_id INTEGER NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  debit REAL NOT NULL DEFAULT 0 CHECK (debit >= 0),
+  credit REAL NOT NULL DEFAULT 0 CHECK (credit >= 0),
+  description TEXT DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
+CREATE INDEX IF NOT EXISTS idx_journal_lines_entry ON journal_lines(entry_id);
+CREATE INDEX IF NOT EXISTS idx_journal_lines_account ON journal_lines(account_id);
+
+/* Plan de cuentas por defecto para Variedades Angie */
+INSERT OR IGNORE INTO accounts (code, name, type) VALUES
+  ('1101', 'Caja General', 'activo'),
+  ('1102', 'Banco', 'activo'),
+  ('1103', 'Cuentas por Cobrar (Fiados)', 'activo'),
+  ('1104', 'Inventario de Mercaderías', 'activo'),
+  ('1201', 'Mobiliario y Equipo', 'activo'),
+  ('2101', 'Cuentas por Pagar', 'pasivo'),
+  ('2102', 'IVA Débito Fiscal', 'pasivo'),
+  ('2103', 'IVA Crédito Fiscal', 'pasivo'),
+  ('3101', 'Capital Social', 'patrimonio'),
+  ('3102', 'Resultados Acumulados', 'patrimonio'),
+  ('3103', 'Resultados del Ejercicio', 'patrimonio'),
+  ('4101', 'Ventas', 'ingreso'),
+  ('4102', 'Otros Ingresos', 'ingreso'),
+  ('5101', 'Costo de Mercadería Vendida', 'gasto'),
+  ('5201', 'Gastos Operativos', 'gasto'),
+  ('5202', 'Sueldos y Cargas Sociales', 'gasto'),
+  ('5203', 'Servicios Públicos', 'gasto'),
+  ('5204', 'Alquileres', 'gasto'),
+  ('5205', 'Comisiones y Honorarios', 'gasto'),
+  ('5206', 'Gastos Varios', 'gasto');
 `);
 
 /* Migraciones para bases creadas con versiones anteriores:

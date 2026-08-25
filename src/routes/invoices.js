@@ -234,4 +234,35 @@ router.post('/:id/void', authenticate, requireAdmin, (req, res) => {
   }
 });
 
+/* Limpiar todo el historial de facturas (solo admin).
+   Devuelve el stock de los productos y borra todo. */
+router.delete('/', authenticate, requireAdmin, (req, res) => {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const items = db.prepare(`
+      SELECT ii.*, i.number FROM invoice_items ii
+      JOIN invoices i ON i.id = ii.invoice_id
+      WHERE ii.product_id IS NOT NULL AND i.status != 'anulada'
+    `).all();
+
+    const updateStock = db.prepare("UPDATE products SET stock = stock + ?, updated_at = datetime('now','localtime') WHERE id = ?");
+    const insertMovement = db.prepare('INSERT INTO movements (product_id, type, quantity, reason, user_id) VALUES (?, ?, ?, ?, ?)');
+
+    for (const item of items) {
+      updateStock.run(item.quantity, item.product_id);
+      insertMovement.run(item.product_id, 'entrada', item.quantity, `Limpieza de historial — FV-${String(item.number).padStart(6, '0')}`, req.user.id);
+    }
+
+    db.prepare('DELETE FROM invoice_payments').run();
+    db.prepare('DELETE FROM invoice_items').run();
+    db.prepare('DELETE FROM invoices').run();
+
+    db.exec('COMMIT');
+    res.json({ message: 'Historial de facturas eliminado. El stock fue devuelto al inventario.' });
+  } catch (e) {
+    db.exec('ROLLBACK');
+    res.status(500).json({ error: e.message || 'Error al limpiar el historial' });
+  }
+});
+
 module.exports = router;

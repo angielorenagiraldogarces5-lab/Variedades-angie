@@ -9,6 +9,7 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 function fmtDate(d) { return d ? d.replace('T', ' ').slice(0, 16) : ''; }
+function isoDate(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()); }
 
 async function api(path, options = {}) {
   const res = await fetch('/api' + path, {
@@ -101,6 +102,39 @@ document.getElementById('btn-change-password').addEventListener('click', () => {
   });
 });
 
+document.getElementById('btn-reset-other-password').addEventListener('click', async () => {
+  let users;
+  try { users = await api('/users/list'); } catch { return toast('Error al cargar usuarios', 'error'); }
+  openModal('Restablecer contraseña de otro', `
+    <form id="reset-other-form">
+      <div class="form-grid">
+        <div class="full"><label>Seleccionar usuario</label>
+          <select name="user_id" required>
+            <option value="">— Elegir colaborador —</option>
+            ${users.filter(u => u.id !== currentUser.id).map(u => `<option value="${u.id}">${esc(u.full_name)} (@${esc(u.username)})</option>`).join('')}
+          </select></div>
+        <div class="full"><label>Nueva contraseña (mínimo 6 caracteres)</label>
+          <input name="new_password" type="password" required minlength="6" autocomplete="new-password"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Restablecer</button>
+      </div>
+    </form>`);
+  document.getElementById('reset-other-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      await api('/users/' + f.user_id.value + '/reset-password', {
+        method: 'POST',
+        body: { new_password: f.new_password.value }
+      });
+      closeModal(); toast('Contraseña restablecida correctamente');
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+});
+
 function enterApp() {
   document.getElementById('login-view').classList.add('hidden');
   document.getElementById('app-view').classList.remove('hidden');
@@ -169,7 +203,11 @@ function switchView(name) {
   if (name === 'pedidos') loadOrders();
   if (name === 'facturas') loadInvoices();
   if (name === 'cobros') loadCollections();
+  if (name === 'fiados_cortos') loadDailyFiados();
   if (name === 'clientes') loadCustomersTable();
+  if (name === 'proveedores') loadSuppliers();
+  if (name === 'caja') loadCashRegisters();
+  if (name === 'contabilidad') initAccountingView();
   if (name === 'productos') { loadCategoryFilter(); loadProducts(); }
   if (name === 'movimientos') loadMovements();
   if (name === 'categorias') loadCategoriesTable();
@@ -366,8 +404,9 @@ async function loadMovements() {
     if (document.getElementById('movement-to').value) params.set('to', document.getElementById('movement-to').value);
 
     const moves = await api('/movements?' + params.toString());
+    const isAdmin = currentUser.role === 'admin';
     document.getElementById('movements-table').innerHTML = `
-      <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th>${isAdmin ? '<th style="text-align:right">Acciones</th>' : ''}</tr></thead>
       <tbody>
         ${moves.length ? moves.map(m => `
           <tr>
@@ -377,11 +416,18 @@ async function loadMovements() {
             <td class="${m.quantity >= 0 ? 'positive' : 'negative'}">${m.quantity >= 0 ? '+' : ''}${m.quantity}</td>
             <td>${esc(m.reason || '—')}</td>
             <td>${esc(m.user_name)}</td>
+            ${isAdmin ? `<td><div class="actions-cell"><button class="btn btn-danger btn-small" onclick="deleteMovement(${m.id}, '${esc(m.product_name).replace(/'/g, "\\'")}')">🗑</button></div></td>` : ''}
           </tr>`).join('')
-          : '<tr class="empty-row"><td colspan="6">No hay movimientos registrados</td></tr>'
+          : `<tr class="empty-row"><td colspan="${isAdmin ? 7 : 6}">No hay movimientos registrados</td></tr>`
         }
       </tbody>`;
   } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteMovement(id, productName) {
+  if (!confirm(`¿Eliminar el movimiento de "${productName}"? El stock se restaurará.`)) return;
+  try { await api('/movements/' + id, { method: 'DELETE' }); toast('Movimiento eliminado'); loadMovements(); }
+  catch (err) { toast(err.message, 'error'); }
 }
 
 /* ================= CATEGORÍAS ================= */
@@ -451,6 +497,7 @@ async function loadUsersTable() {
             <td>${u.active ? '<span class="badge ok">Activo</span>' : '<span class="badge inactive">Inactivo</span>'}</td>
             <td><div class="actions-cell">
               <button class="btn btn-outline btn-small" onclick='openUserModal(${JSON.stringify(u)})'>✏️ Editar</button>
+              <button class="btn btn-outline btn-small" onclick="openResetPasswordModal(${u.id}, '${esc(u.full_name).replace(/'/g, "\\'")}')">🔑</button>
               ${u.id !== currentUser.id ? `<button class="btn btn-danger btn-small" onclick="deleteUser(${u.id}, '${esc(u.username).replace(/'/g, "\\'")}')">🗑</button>` : ''}
             </div></td>
           </tr>`).join('')}
@@ -498,6 +545,33 @@ async function deleteUser(id, username) {
   if (!confirm(`¿Desactivar al colaborador "@${username}"? Ya no podrá iniciar sesión.`)) return;
   try { await api('/users/' + id, { method: 'DELETE' }); toast('Colaborador desactivado'); loadUsersTable(); }
   catch (err) { toast(err.message, 'error'); }
+}
+
+function openResetPasswordModal(userId, fullName) {
+  openModal('Restablecer contraseña', `
+    <form id="reset-password-form">
+      <p style="margin:0 0 1rem;color:var(--muted)">Establecer nueva contraseña para <strong>${esc(fullName)}</strong></p>
+      <div class="form-grid">
+        <div class="full"><label>Nueva contraseña (mínimo 6 caracteres)</label>
+          <input name="new_password" type="password" required minlength="6" autocomplete="new-password"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Restablecer</button>
+      </div>
+    </form>`);
+  document.getElementById('reset-password-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      await api('/users/' + userId + '/reset-password', {
+        method: 'POST',
+        body: { new_password: f.new_password.value }
+      });
+      closeModal(); toast('Contraseña restablecida correctamente');
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
 }
 
 /* ================= COMISIONES ================= */
@@ -806,7 +880,7 @@ function removeFromCart(id) { cart.delete(id); renderCart(); }
 
 function cartTotal() {
   let total = 0;
-  for (const e of cart.values()) total += Math.round((Number(e.price) || 0) * e.qty);
+  for (const e of cart.values()) total += Math.round((Number(e.price ?? e.product?.sale_price) || 0) * e.qty);
   return total;
 }
 
@@ -993,6 +1067,20 @@ async function voidInvoice(id) {
   if (!confirm('¿Anular esta factura? El stock de los productos será devuelto al inventario.')) return;
   try { const r = await api(`/invoices/${id}/void`, { method: 'POST' }); toast(r.message); loadInvoices(); }
   catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteAllInvoices() {
+  if (!confirm('⚠️ ELIMINAR TODO EL HISTORIAL DE FACTURAS\n\nSe borrarán TODAS las facturas. El stock será devuelto al inventario.\n\n¿Continuar?')) return;
+  if (!confirm('¿Estás SEGURO? Esta acción no se puede deshacer.')) return;
+  try {
+    const r = await fetch('/api/invoices', {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    toast(r.message);
+    loadInvoices();
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 /* ---------- Plantilla compartida de la hoja de factura ---------- */
@@ -2413,5 +2501,890 @@ function openCustomerModal(customer = null) {
 async function deleteCustomer(id, name) {
   if (!confirm(`¿Eliminar al cliente "${name}"? Sus facturas anteriores se conservan.`)) return;
   try { await api('/customers/' + id, { method: 'DELETE' }); toast('Cliente eliminado'); loadCustomersTable(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+/* ================= PROVEEDORES ================= */
+let supplierTimer;
+function debouncedLoadSuppliers() { clearTimeout(supplierTimer); supplierTimer = setTimeout(loadSuppliers, 300); }
+
+async function loadSuppliers() {
+  try {
+    const search = document.getElementById('supplier-search')?.value || '';
+    const params = search ? '?search=' + encodeURIComponent(search) : '';
+    const list = await api('/suppliers' + params);
+    document.getElementById('suppliers-table').innerHTML = `
+      <thead><tr><th>#</th><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th style="text-align:right">Acciones</th></tr></thead>
+      <tbody>
+        ${list.length ? list.map((s, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${esc(s.name)}</strong></td>
+            <td>${esc(s.document || '—')}</td>
+            <td>${s.phone ? `<a href="https://wa.me/${s.phone.replace(/[^0-9]/g, '')}" target="_blank" style="color:#25d366">${esc(s.phone)}</a>` : '—'}</td>
+            <td>${esc(s.email || '—')}</td>
+            <td>${esc(s.address || '—')}</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-small" onclick='openSupplierModal(${JSON.stringify(s)})'>✏️ Editar</button>
+              <button class="btn btn-danger btn-small" onclick="deleteSupplier(${s.id}, '${esc(s.name).replace(/'/g, "\\'")}')">🗑</button>
+            </div></td>
+          </tr>`).join('')
+          : '<tr class="empty-row"><td colspan="7">No hay proveedores registrados. Crea el primero con el botón de arriba.</td></tr>'
+        }
+      </tbody>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openSupplierModal(supplier = null) {
+  openModal(supplier ? 'Editar proveedor' : 'Nuevo proveedor', `
+    <form id="supplier-form">
+      <div class="form-grid">
+        <div class="full"><label>Nombre *</label><input name="name" required value="${esc(supplier?.name || '')}" placeholder="Ej: Distribuidora ABC"></div>
+        <div><label>Documento (RUC/DNI)</label><input name="document" value="${esc(supplier?.document || '')}" placeholder="Ej: 30-71234567-8"></div>
+        <div><label>Teléfono</label><input name="phone" value="${esc(supplier?.phone || '')}" placeholder="Ej: +54 9 261 123-4567"></div>
+        <div class="full"><label>Correo</label><input name="email" type="email" value="${esc(supplier?.email || '')}" placeholder="ventas@proveedor.com"></div>
+        <div class="full"><label>Dirección</label><input name="address" value="${esc(supplier?.address || '')}" placeholder="Av. Los Álamos 456"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>`);
+  document.getElementById('supplier-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    const body = Object.fromEntries(new FormData(f));
+    try {
+      supplier ? await api('/suppliers/' + supplier.id, { method: 'PUT', body })
+               : await api('/suppliers', { method: 'POST', body });
+      closeModal(); toast('Proveedor guardado'); loadSuppliers();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+async function deleteSupplier(id, name) {
+  if (!confirm(`¿Eliminar al proveedor "${name}"?`)) return;
+  try { await api('/suppliers/' + id, { method: 'DELETE' }); toast('Proveedor eliminado'); loadSuppliers(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+/* ================= CAJA / ARQUEO ================= */
+async function loadCashRegisters() {
+  try {
+    const [list, current] = await Promise.all([api('/cashregister'), api('/cashregister/current')]);
+    const contentEl = document.getElementById('cashregister-content');
+
+    if (current) {
+      contentEl.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card" style="border-left:4px solid #22c55e">
+            <span class="stat-icon">🟢</span>
+            <h3>Caja #${current.number}</h3>
+            <p>Abierta por ${esc(current.cashier_name)} · ${fmtDate(current.opened_at)}</p>
+          </div>
+          <div class="stat-card"><span class="stat-icon">💵</span><h3>${money(current.initial_amount)}</h3><p>Monto inicial</p></div>
+          <div class="stat-card"><span class="stat-icon">📈</span><h3 class="positive">${money(current.total_income)}</h3><p>Ingresos</p></div>
+          <div class="stat-card"><span class="stat-icon">📉</span><h3 class="negative">${money(current.total_expenses)}</h3><p>Egresos</p></div>
+          <div class="stat-card"><span class="stat-icon">🧮</span><h3>${money(current.expected_total)}</h3><p>Total esperado</p></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openCashMovementModal(${current.id})">＋ Registrar movimiento</button>
+          <button class="btn btn-danger" onclick="closeCashRegisterModal(${current.id})">🔒 Cerrar caja (arqueo)</button>
+          <button class="btn btn-outline" onclick="viewCashRegister(${current.id})">👁 Ver movimientos</button>
+        </div>`;
+    } else {
+      contentEl.innerHTML = '<p class="config-hint">No hay caja abierta. Abrí una para empezar a registrar ingresos y egresos.</p>';
+    }
+
+    document.getElementById('cashregisters-table').innerHTML = `
+      <thead><tr><th>Caja</th><th>Fecha apertura</th><th>Cajero</th><th>Inicial</th><th>Ingresos</th><th>Egresos</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Estado</th><th style="text-align:right">Acciones</th></tr></thead>
+      <tbody>
+        ${list.length ? list.map(cr => {
+          const diffClass = cr.difference > 0 ? 'positive' : cr.difference < 0 ? 'negative' : '';
+          const diffLabel = cr.status === 'cerrada'
+            ? (cr.difference > 0 ? `<span class="positive">+$${Math.abs(cr.difference).toFixed(2)}</span>` : cr.difference < 0 ? `<span class="negative">-$${Math.abs(cr.difference).toFixed(2)}</span>` : '$0.00')
+            : '—';
+          return `<tr>
+            <td><strong>#${cr.number}</strong></td>
+            <td>${fmtDate(cr.opened_at)}</td>
+            <td>${esc(cr.cashier_name)}</td>
+            <td>${money(cr.initial_amount)}</td>
+            <td class="positive">${money(cr.total_income)}</td>
+            <td class="negative">${money(cr.total_expenses)}</td>
+            <td>${money(cr.expected_total)}</td>
+            <td>${cr.counted_amount != null ? money(cr.counted_amount) : '—'}</td>
+            <td class="${diffClass}">${diffLabel}</td>
+            <td><span class="badge status-${cr.status === 'abierta' ? 'pagada' : 'anulada'}">${cr.status === 'abierta' ? 'ABIERTA' : 'CERRADA'}</span></td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-small" onclick="viewCashRegister(${cr.id})">👁</button>
+              ${currentUser.role === 'admin' && cr.status === 'cerrada' ? `<button class="btn btn-outline btn-small" onclick="reopenCashRegister(${cr.id})">🔓 Reabrir</button>` : ''}
+              ${currentUser.role === 'admin' && cr.status === 'cerrada' ? `<button class="btn btn-danger btn-small" onclick="deleteCashRegister(${cr.id})">🗑</button>` : ''}
+            </div></td>
+          </tr>`;
+        }).join('')
+          : '<tr class="empty-row"><td colspan="11">No hay cajas registradas</td></tr>'
+        }
+      </tbody>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openCashRegisterModal() {
+  openModal('Abrir nueva caja', `
+    <form id="cashregister-form">
+      <div class="form-grid">
+        <div class="full"><label>Monto inicial *</label><input name="initial_amount" type="number" min="0" step="any" required placeholder="0"></div>
+        <div class="full"><label>Observación</label><input name="open_notes" placeholder="Ej: Apertura del lunes..."></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Abrir caja</button>
+      </div>
+    </form>`);
+  document.getElementById('cashregister-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      const r = await api('/cashregister', { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+      closeModal(); toast(r.message); loadCashRegisters();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+function openCashMovementModal(crId) {
+  const concepts = {
+    ingreso: ['Venta de contado', 'Abono de fiado', 'Transferencia recibida', 'Otro ingreso'],
+    egreso: ['Gasto operativo', 'Retiro de caja', 'Pago a proveedor', 'Otro egreso']
+  };
+  openModal('Registrar movimiento', `
+    <form id="cashmovement-form">
+      <div class="form-grid">
+        <div><label>Tipo *</label>
+          <select name="type" id="cm-type">
+            <option value="ingreso">📈 Ingreso</option>
+            <option value="egreso">📉 Egreso</option>
+          </select></div>
+        <div><label>Concepto *</label>
+          <select name="concept" id="cm-concept">
+            ${concepts.ingreso.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select></div>
+        <div class="full"><label>Monto *</label><input name="amount" type="number" min="0.01" step="any" required placeholder="0"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Registrar</button>
+      </div>
+    </form>`);
+  document.getElementById('cm-type').addEventListener('change', function () {
+    document.getElementById('cm-concept').innerHTML = concepts[this.value].map(c => `<option value="${c}">${c}</option>`).join('');
+  });
+  document.getElementById('cashmovement-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      await api(`/cashregister/${crId}/movements`, { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+      closeModal(); toast('Movimiento registrado'); loadCashRegisters();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+function closeCashRegisterModal(crId) {
+  openModal('Cerrar caja (arqueo)', `
+    <form id="closecash-form">
+      <div class="form-grid">
+        <div class="full"><label>Monto contado (lo que hay en la caja) *</label><input name="counted_amount" type="number" min="0" step="any" required placeholder="0"></div>
+        <div class="full"><label>Observación del cierre</label><input name="close_notes" placeholder="Detalle del arqueo..."></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-danger">Cerrar caja</button>
+      </div>
+    </form>`);
+  document.getElementById('closecash-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      const r = await api(`/cashregister/${crId}/close`, { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+      closeModal();
+      if (r.difference > 0) toast(`Caja cerrada. Sobrante: $${r.difference.toFixed(2)}`, 'success');
+      else if (r.difference < 0) toast(`Caja cerrada. Faltante: $${Math.abs(r.difference).toFixed(2)}`, 'error');
+      else toast('Caja cerrada. Todo cuadra');
+      loadCashRegisters();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+async function viewCashRegister(crId) {
+  try {
+    const cr = await api('/cashregister/' + crId);
+    const isOpen = cr.status === 'abierta';
+    openModal(`Caja #${cr.number} — ${cr.status.toUpperCase()}`, `
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card"><span class="stat-icon">💵</span><h3>${money(cr.initial_amount)}</h3><p>Inicial</p></div>
+        <div class="stat-card"><span class="stat-icon">📈</span><h3 class="positive">${money(cr.total_income)}</h3><p>Ingresos</p></div>
+        <div class="stat-card"><span class="stat-icon">📉</span><h3 class="negative">${money(cr.total_expenses)}</h3><p>Egresos</p></div>
+        <div class="stat-card"><span class="stat-icon">🧮</span><h3>${money(cr.expected_total)}</h3><p>Esperado</p></div>
+      </div>
+      ${cr.status === 'cerrada' ? `<p class="config-hint">Cerrada por ${esc(cr.closed_by)} · Contado: ${money(cr.counted_amount)} · Diferencia: ${cr.difference >= 0 ? '+' : ''}$${cr.difference.toFixed(2)}${cr.close_notes ? ' · ' + esc(cr.close_notes) : ''}</p>` : ''}
+      <table class="mini-table">
+        <thead><tr><th>#</th><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Registrado por</th><th>Fecha</th>${isOpen ? '<th></th>' : ''}</tr></thead>
+        <tbody>
+          ${cr.movements.length ? cr.movements.map(m => `
+            <tr>
+              <td>${m.id}</td>
+              <td><span class="badge type-${m.type === 'ingreso' ? 'entrada' : 'salida'}">${m.type === 'ingreso' ? 'INGRESO' : 'EGRESO'}</span></td>
+              <td>${esc(m.concept)}</td>
+              <td class="${m.type === 'ingreso' ? 'positive' : 'negative'}">${m.type === 'ingreso' ? '+' : '-'}${money(m.amount)}</td>
+              <td>${esc(m.user_name || '—')}</td>
+              <td>${fmtDate(m.created_at)}</td>
+              ${isOpen ? `<td><button class="btn btn-danger btn-small" onclick="deleteCashMovement(${cr.id}, ${m.id})">🗑</button></td>` : ''}
+            </tr>`).join('')
+            : '<tr class="empty-row"><td colspan="6">Sin movimientos</td></tr>'
+          }
+        </tbody>
+      </table>
+      <div class="form-actions" style="margin-top:12px">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+      </div>
+    `, { wide: true });
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteCashMovement(crId, mid) {
+  if (!confirm('¿Eliminar este movimiento?')) return;
+  try {
+    await api(`/cashregister/${crId}/movements/${mid}`, { method: 'DELETE' });
+    toast('Movimiento eliminado'); viewCashRegister(crId); loadCashRegisters();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function reopenCashRegister(crId) {
+  if (!confirm('¿Reabrir esta caja?')) return;
+  try { await api(`/cashregister/${crId}/reopen`, { method: 'POST' }); toast('Caja reabierta'); loadCashRegisters(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteCashRegister(crId) {
+  if (!confirm('¿Eliminar esta caja? Esta acción no se puede deshacer.')) return;
+  try { await api('/cashregister/' + crId, { method: 'DELETE' }); toast('Caja eliminada'); loadCashRegisters(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+/* ================= CONTABILIDAD ================= */
+const ACCT_TYPES = { activo: 'Activo', pasivo: 'Pasivo', patrimonio: 'Patrimonio', ingreso: 'Ingreso', gasto: 'Gasto' };
+const ACCT_COLORS = { activo: '#2563eb', pasivo: '#dc2626', patrimonio: '#7c3aed', ingreso: '#16a34a', gasto: '#d97706' };
+
+let currentAcctTab = 'resumen';
+let acctSearchTimer;
+
+function debouncedLoadJournal() { clearTimeout(acctSearchTimer); acctSearchTimer = setTimeout(loadJournalEntries, 300); }
+
+function initAccountingView() {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const today = now.toISOString().slice(0, 10);
+
+  // Set default dates for all tabs
+  for (const prefix of ['diario', 'resultado', 'flujo']) {
+    const fromEl = document.getElementById(`acct-${prefix}-from`);
+    const toEl = document.getElementById(`acct-${prefix}-to`);
+    if (fromEl && !fromEl.value) fromEl.value = firstDay;
+    if (toEl && !toEl.value) toEl.value = lastDay;
+  }
+  const balanceDate = document.getElementById('acct-balance-date');
+  if (balanceDate && !balanceDate.value) balanceDate.value = today;
+
+  loadAccountingSummary();
+}
+
+function switchAccountingTab(tab) {
+  currentAcctTab = tab;
+  document.querySelectorAll('#acct-tabs .tab-btn').forEach((btn, i) => {
+    const tabs = ['resumen', 'diario', 'resultado', 'balance', 'flujo', 'cuentas'];
+    btn.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.acct-panel').forEach(p => p.classList.add('hidden'));
+  document.getElementById('acct-tab-' + tab)?.classList.remove('hidden');
+
+  if (tab === 'resumen') loadAccountingSummary();
+  if (tab === 'diario') loadJournalEntries();
+  if (tab === 'resultado') loadIncomeStatement();
+  if (tab === 'balance') loadBalanceSheet();
+  if (tab === 'flujo') loadCashFlow();
+  if (tab === 'cuentas') loadAccounts();
+}
+
+/* Resumen contable */
+async function loadAccountingSummary() {
+  try {
+    const s = await api('/accounting/summary');
+    const utilidad = (s.ventas_mes.total || 0) - s.egresos_mes - (s.fiados_pendientes.total || 0);
+
+    document.getElementById('acct-summary-stats').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card" style="border-left:4px solid var(--green)">
+          <span class="stat-icon">📈</span>
+          <h3 class="positive">${money(s.ventas_mes.total)}</h3>
+          <p>Ventas del mes (${s.ventas_mes.count} facturas)</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid var(--amber)">
+          <span class="stat-icon">📝</span>
+          <h3>${money(s.fiados_pendientes.total)}</h3>
+          <p>Fiados por cobrar (${s.fiados_pendientes.count})</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid var(--red)">
+          <span class="stat-icon">📉</span>
+          <h3 class="negative">${money(s.egresos_mes)}</h3>
+          <p>Egresos del mes</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #2563eb">
+          <span class="stat-icon">💵</span>
+          <h3>${money(s.caja_disponible)}</h3>
+          <p>Caja disponible</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #7c3aed">
+          <span class="stat-icon">📦</span>
+          <h3>${money(s.inventario.cost)}</h3>
+          <p>Inventario (${s.inventario.count} productos)</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #0ea5e9">
+          <span class="stat-icon">📒</span>
+          <h3>${s.asientos_contables}</h3>
+          <p>Asientos contables registrados</p>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:1rem">
+        <h4>📅 Período contable</h4>
+        <div style="padding:1rem">
+          <p><strong>Desde:</strong> ${s.periodo.desde || 'Sin datos'} · <strong>Hasta:</strong> ${s.periodo.hasta || 'Sin datos'}</p>
+          <p style="margin-top:.5rem;color:var(--muted);font-size:.88rem">Los asientos se generan automáticamente desde facturas, caja y cobros de fiados. Podés crear asientos manuales desde la pestaña "Libro Diario".</p>
+        </div>
+      </div>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Generar todos los asientos de un período */
+async function generateAllEntries() {
+  const from = document.getElementById('acct-diario-from')?.value || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const to = document.getElementById('acct-diario-to')?.value || new Date().toISOString().slice(0, 10);
+
+  if (!confirm(`¿Generar asientos contables desde ${from} hasta ${to}?\n\nSe crearán asientos automáticamente desde:\n• Facturas pagadas y pendientes\n• Movimientos de caja\n• Cobros de fiados\n\nLos asientos ya generados no se duplicarán.`)) return;
+
+  try {
+    const r = await api('/accounting/generate-all', { method: 'POST', body: { from, to } });
+    toast(r.message);
+    loadAccountingSummary();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Libro Diario */
+async function loadJournalEntries() {
+  try {
+    const params = new URLSearchParams();
+    const from = document.getElementById('acct-diario-from')?.value;
+    const to = document.getElementById('acct-diario-to')?.value;
+    const search = document.getElementById('acct-diario-search')?.value.trim();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (search) params.set('search', search);
+
+    const entries = await api('/accounting/journal?' + params.toString());
+
+    document.getElementById('acct-journal-table').innerHTML = `
+      <thead><tr>
+        <th>Asiento</th><th>Fecha</th><th>Descripción</th><th>Fuente</th>
+        <th class="t-right">Débito</th><th class="t-right">Crédito</th>
+        <th>Registrado por</th><th style="text-align:right">Acciones</th>
+      </tr></thead>
+      <tbody>
+        ${entries.length ? entries.map(e => `
+          <tr>
+            <td><strong>#${e.number}</strong></td>
+            <td>${e.date}</td>
+            <td>${esc(e.description)}</td>
+            <td><span class="badge" style="background:#dbeafe;color:#1d4ed8">${esc(e.source || 'manual')}</span></td>
+            <td class="t-right positive">${money(e.total_debit || 0)}</td>
+            <td class="t-right negative">${money(e.total_credit || 0)}</td>
+            <td>${esc(e.user_name || '—')}</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-small" onclick="viewJournalEntry(${e.id})">👁 Ver</button>
+              ${e.source === 'manual' ? `<button class="btn btn-danger btn-small" onclick="deleteJournalEntry(${e.id})">🗑</button>` : ''}
+            </div></td>
+          </tr>`).join('')
+          : '<tr class="empty-row"><td colspan="8">No hay asientos contables en este período.<br>Usá <strong>"Generar asientos del período"</strong> para crearlos automáticamente.</td></tr>'}
+      </tbody>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function viewJournalEntry(id) {
+  try {
+    const e = await api('/accounting/journal/' + id);
+    openModal(`Asiento #${e.number} — ${e.date}`, `
+      <p style="margin:0 0 .5rem;color:var(--muted)">${esc(e.description)}</p>
+      <p style="margin:0 0 1rem;font-size:.85rem">Fuente: <strong>${esc(e.source || 'manual')}</strong> · Registrado por: <strong>${esc(e.user_name || '—')}</strong></p>
+      <table class="mini-table">
+        <thead><tr>
+          <th>Cuenta</th><th>Tipo</th><th class="t-right">Débito</th><th class="t-right">Crédito</th><th>Detalle</th>
+        </tr></thead>
+        <tbody>
+          ${e.lines.map(l => `
+            <tr>
+              <td><code style="background:#f1f5f9;padding:.1rem .35rem;border-radius:5px;font-size:.8rem">${esc(l.account_code)}</code> <strong>${esc(l.account_name)}</strong></td>
+              <td><span class="badge" style="background:${ACCT_COLORS[l.account_type]}22;color:${ACCT_COLORS[l.account_type]}">${ACCT_TYPES[l.account_type]}</span></td>
+              <td class="t-right ${l.debit > 0 ? 'positive' : ''}">${l.debit > 0 ? money(l.debit) : '—'}</td>
+              <td class="t-right ${l.credit > 0 ? 'negative' : ''}">${l.credit > 0 ? money(l.credit) : '—'}</td>
+              <td>${esc(l.description || '—')}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="2"><strong>TOTAL</strong></td>
+          <td class="t-right positive"><strong>${money(e.lines.reduce((s, l) => s + l.debit, 0))}</strong></td>
+          <td class="t-right negative"><strong>${money(e.lines.reduce((s, l) => s + l.credit, 0))}</strong></td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+      </div>
+    `, { wide: true });
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Asiento manual */
+async function openJournalEntryModal() {
+  const accounts = await api('/accounting/accounts');
+  const today = new Date().toISOString().slice(0, 10);
+
+  openModal('Nuevo asiento contable', `
+    <form id="journal-form">
+      <div class="form-grid">
+        <div><label>Fecha *</label><input type="date" name="date" value="${today}" required></div>
+        <div class="full"><label>Descripción *</label><input name="description" required placeholder="Ej: Pago de alquiler mensual"></div>
+      </div>
+      <h4 style="margin:1rem 0 .5rem;font-size:.9rem">Líneas del asiento (mínimo 2)</h4>
+      <div id="journal-lines" class="acct-lines"></div>
+      <button type="button" class="btn btn-outline" onclick="addJournalLine()" style="margin-top:.5rem">＋ Agregar línea</button>
+      <p class="form-error" style="margin-top:.5rem"></p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Registrar asiento</button>
+      </div>
+    </form>`);
+
+  window._acctAccounts = accounts;
+  addJournalLine();
+  addJournalLine();
+
+  document.getElementById('journal-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    const lines = [];
+    document.querySelectorAll('#journal-lines .acct-line').forEach(row => {
+      const accountId = Number(row.querySelector('[name=account_id]').value);
+      const debit = Number(row.querySelector('[name=debit]').value) || 0;
+      const credit = Number(row.querySelector('[name=credit]').value) || 0;
+      const desc = row.querySelector('[name=line_desc]').value;
+      if (accountId) lines.push({ account_id: accountId, debit, credit, description: desc });
+    });
+
+    try {
+      await api('/accounting/journal', {
+        method: 'POST',
+        body: { date: f.date.value, description: f.description.value, lines }
+      });
+      closeModal(); toast('Asiento registrado'); loadJournalEntries();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+function addJournalLine() {
+  const container = document.getElementById('journal-lines');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'acct-line';
+  div.innerHTML = `
+    <select name="account_id" required>
+      <option value="">— Cuenta —</option>
+      ${window._acctAccounts.map(a => `<option value="${a.id}">${a.code} — ${esc(a.name)}</option>`).join('')}
+    </select>
+    <input name="debit" type="number" min="0" step="any" placeholder="Débito" oninput="this.closest('.acct-line').querySelector('[name=credit]').value = this.value ? '' : ''">
+    <input name="credit" type="number" min="0" step="any" placeholder="Crédito" oninput="this.closest('.acct-line').querySelector('[name=debit]').value = this.value ? '' : ''">
+    <input name="line_desc" placeholder="Detalle (opcional)">
+    <button type="button" class="btn btn-danger btn-small" onclick="this.closest('.acct-line').remove()">🗑</button>
+  `;
+  container.appendChild(div);
+}
+
+async function deleteJournalEntry(id) {
+  if (!confirm('¿Eliminar este asiento manual?')) return;
+  try { await api('/accounting/journal/' + id, { method: 'DELETE' }); toast('Asiento eliminado'); loadJournalEntries(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+/* Estado de Resultados */
+async function loadIncomeStatement() {
+  try {
+    const from = document.getElementById('acct-resultado-from')?.value;
+    const to = document.getElementById('acct-resultado-to')?.value;
+    if (!from || !to) return;
+
+    const d = await api(`/accounting/income-statement?from=${from}&to=${to}`);
+
+    const utilidadClass = d.utilidad_neta >= 0 ? 'positive' : 'negative';
+
+    document.getElementById('acct-income-statement').innerHTML = `
+      <div class="panel acct-report">
+        <h4>📈 Estado de Resultados — ${d.period.from} al ${d.period.to}</h4>
+        <div class="acct-report-body">
+          <div class="acct-row"><span>Ventas Brutas</span><strong class="positive">${money(d.ventas_brutas)}</strong></div>
+          <div class="acct-row"><span>(−) Costo de Mercadería Vendida</span><strong class="negative">−${money(d.costo_mercaderia)}</strong></div>
+          <div class="acct-row acct-total"><span>UTILIDAD BRUTA</span><strong class="${d.utilidad_bruta >= 0 ? 'positive' : 'negative'}">${money(d.utilidad_bruta)}</strong></div>
+
+          <div class="acct-sep"></div>
+
+          <div class="acct-row"><span>Ingresos por cobro de fiados</span><strong>${money(d.ingresos_fiados)}</strong></div>
+          <div class="acct-row"><span>(−) Comisiones de vendedores</span><strong class="negative">−${money(d.comisiones)}</strong></div>
+
+          <div class="acct-sep"></div>
+          <div class="acct-row acct-subtitle"><span>Gastos Operativos</span><strong></strong></div>
+          ${d.gastos_detalle.map(g => `
+            <div class="acct-row acct-indent"><span>${esc(g.concept)}</span><strong class="negative">−${money(g.total)}</strong></div>
+          `).join('')}
+          <div class="acct-row"><span>Total Gastos Operativos</span><strong class="negative">−${money(d.gastos_operativos)}</strong></div>
+
+          <div class="acct-sep"></div>
+          <div class="acct-row acct-total acct-grand"><span>UTILIDAD NETA</span><strong class="${utilidadClass}">${money(d.utilidad_neta)}</strong></div>
+        </div>
+      </div>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Balance General */
+async function loadBalanceSheet() {
+  try {
+    const date = document.getElementById('acct-balance-date')?.value;
+    if (!date) return;
+
+    const d = await api(`/accounting/balance-sheet?date=${date}`);
+
+    document.getElementById('acct-balance-sheet').innerHTML = `
+      <div class="panel acct-report">
+        <h4>⚖️ Balance General al ${d.date}</h4>
+        <div class="acct-report-body">
+          <div class="acct-row acct-subtitle"><span>ACTIVOS</span><strong></strong></div>
+          <div class="acct-row acct-indent"><span>Caja General</span><strong>${money(d.activos.caja)}</strong></div>
+          <div class="acct-row acct-indent"><span>Cuentas por Cobrar (Fiados)</span><strong>${money(d.activos.cuentas_por_cobrar)}</strong></div>
+          <div class="acct-row acct-indent"><span>Inventario de Mercaderías</span><strong>${money(d.activos.inventario)}</strong></div>
+          <div class="acct-row acct-total"><span>TOTAL ACTIVOS</span><strong>${money(d.activos.total)}</strong></div>
+
+          <div class="acct-sep"></div>
+
+          <div class="acct-row acct-subtitle"><span>PASIVOS</span><strong></strong></div>
+          <div class="acct-row acct-indent"><span>Cuentas por Pagar</span><strong>${money(d.pasivos.total)}</strong></div>
+          <div class="acct-row acct-total"><span>TOTAL PASIVOS</span><strong>${money(d.pasivos.total)}</strong></div>
+
+          <div class="acct-sep"></div>
+
+          <div class="acct-row acct-subtitle"><span>PATRIMONIO</span><strong></strong></div>
+          <div class="acct-row acct-indent"><span>Capital Social</span><strong>${money(d.patrimonio.capital)}</strong></div>
+          <div class="acct-row acct-indent"><span>Resultados Acumulados</span><strong>${money(d.patrimonio.resultados_acumulados)}</strong></div>
+          <div class="acct-row acct-indent"><span>Resultados del Ejercicio</span><strong class="${d.patrimonio.resultados_ejercicio >= 0 ? 'positive' : 'negative'}">${money(d.patrimonio.resultados_ejercicio)}</strong></div>
+          <div class="acct-row acct-total"><span>TOTAL PATRIMONIO</span><strong>${money(d.patrimonio.total)}</strong></div>
+
+          <div class="acct-sep"></div>
+
+          <div class="acct-row acct-grand"><span>PASIVOS + PATRIMONIO</span><strong>${money(d.pasivos.total + d.patrimonio.total)}</strong></div>
+        </div>
+      </div>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Flujo de Caja */
+async function loadCashFlow() {
+  try {
+    const from = document.getElementById('acct-flujo-from')?.value;
+    const to = document.getElementById('acct-flujo-to')?.value;
+    if (!from || !to) return;
+
+    const d = await api(`/accounting/cash-flow?from=${from}&to=${to}`);
+
+    const PAYMENT_LABELS = { efectivo: '💵 Efectivo', tarjeta: '💳 Tarjeta', transferencia: '🏦 Transferencia', fiado: '📝 Fiado' };
+
+    document.getElementById('acct-cash-flow').innerHTML = `
+      <div class="panel acct-report">
+        <h4>💧 Flujo de Caja — ${d.period.from} al ${d.period.to}</h4>
+        <div class="acct-report-body">
+          <div class="acct-row acct-subtitle"><span>ENTRADAS</span><strong></strong></div>
+          ${d.ingresos_ventas.map(v => `
+            <div class="acct-row acct-indent"><span>${PAYMENT_LABELS[v.payment_method] || v.payment_method} (${v.count} ventas)</span><strong class="positive">${money(v.total)}</strong></div>
+          `).join('')}
+          <div class="acct-row acct-indent"><span>Cobros de fiados</span><strong class="positive">${money(d.ingresos_fiados)}</strong></div>
+          <div class="acct-row acct-total"><span>TOTAL ENTRADAS DE CAJA</span><strong class="positive">${money(d.ingresos_caja + d.ingresos_fiados)}</strong></div>
+
+          <div class="acct-sep"></div>
+
+          <div class="acct-row acct-subtitle"><span>SALIDAS</span><strong></strong></div>
+          ${d.egresos_detalle.map(e => `
+            <div class="acct-row acct-indent"><span>${esc(e.concept)}</span><strong class="negative">−${money(e.total)}</strong></div>
+          `).join('')}
+          <div class="acct-row acct-total"><span>TOTAL SALIDAS DE CAJA</span><strong class="negative">−${money(d.egresos_caja)}</strong></div>
+
+          <div class="acct-sep"></div>
+          <div class="acct-row acct-grand"><span>FLUJO NETO DE CAJA</span><strong class="${d.flujo_neto >= 0 ? 'positive' : 'negative'}">${d.flujo_neto >= 0 ? '+' : ''}${money(d.flujo_neto)}</strong></div>
+        </div>
+      </div>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* Plan de Cuentas */
+async function loadAccounts() {
+  try {
+    const accounts = await api('/accounting/accounts');
+    const isAdmin = currentUser.role === 'admin';
+
+    document.getElementById('acct-accounts-table').innerHTML = `
+      <thead><tr>
+        <th>Código</th><th>Nombre</th><th>Tipo</th><th>Movimientos</th>
+        ${isAdmin ? '<th style="text-align:right">Acciones</th>' : ''}
+      </tr></thead>
+      <tbody>
+        ${accounts.length ? accounts.map(a => `
+          <tr>
+            <td><code style="background:#f1f5f9;padding:.15rem .45rem;border-radius:5px;font-size:.85rem">${esc(a.code)}</code></td>
+            <td><strong>${esc(a.name)}</strong></td>
+            <td><span class="badge" style="background:${ACCT_COLORS[a.type]}22;color:${ACCT_COLORS[a.type]}">${ACCT_TYPES[a.type]}</span></td>
+            <td>${a.usage_count || 0}</td>
+            ${isAdmin ? `<td><div class="actions-cell">
+              <button class="btn btn-outline btn-small" onclick='openAccountModal(${JSON.stringify({ id: a.id, code: a.code, name: a.name, type: a.type })})'>✏️ Editar</button>
+              ${a.usage_count === 0 ? `<button class="btn btn-danger btn-small" onclick="deleteAccount(${a.id}, '${esc(a.name).replace(/'/g, "\\'")}')">🗑</button>` : ''}
+            </div></td>` : ''}
+          </tr>`).join('')
+          : '<tr class="empty-row"><td colspan="5">No hay cuentas configuradas</td></tr>'}
+      </tbody>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openAccountModal(account = null) {
+  openModal(account ? 'Editar cuenta' : 'Nueva cuenta', `
+    <form id="account-form">
+      <div class="form-grid">
+        <div><label>Código *</label><input name="code" required value="${esc(account?.code || '')}" placeholder="Ej: 5207" ${account ? 'readonly' : ''}></div>
+        <div><label>Tipo *</label>
+          <select name="type" required>
+            ${Object.entries(ACCT_TYPES).map(([k, v]) => `<option value="${k}" ${account?.type === k ? 'selected' : ''}>${v}</option>`).join('')}
+          </select></div>
+        <div class="full"><label>Nombre *</label><input name="name" required value="${esc(account?.name || '')}" placeholder="Ej: Servicio de limpieza"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>`);
+  document.getElementById('account-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    const body = Object.fromEntries(new FormData(f));
+    try {
+      account ? await api('/accounting/accounts/' + account.id, { method: 'PUT', body })
+               : await api('/accounting/accounts', { method: 'POST', body });
+      closeModal(); toast('Cuenta guardada'); loadAccounts();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+async function deleteAccount(id, name) {
+  if (!confirm(`¿Eliminar la cuenta "${name}"?`)) return;
+  try { await api('/accounting/accounts/' + id, { method: 'DELETE' }); toast('Cuenta eliminada'); loadAccounts(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+/* ================= FIADOS DEL DÍA ================= */
+let dfTimer;
+function debouncedLoadDailyFiados() { clearTimeout(dfTimer); dfTimer = setTimeout(loadDailyFiados, 300); }
+
+const PLAZO_LABELS = { diario: 'Diario', '8dias': '8 días', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' };
+
+async function loadDailyFiados() {
+  try {
+    const params = new URLSearchParams();
+    const s = document.getElementById('df-search')?.value.trim();
+    if (s) params.set('search', s);
+    const st = document.getElementById('df-status-filter')?.value;
+    if (st) params.set('status', st);
+
+    const data = await api('/daily-fiados?' + params.toString());
+    const st2 = data.stats;
+
+    document.getElementById('daily-fiados-stats').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card" style="border-left:4px solid #ef4444">
+          <span class="stat-icon">🔴</span>
+          <h3>${st2.vencidos}</h3>
+          <p>Vencidos · ${money(st2.vencidos_monto)}</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #f59e0b">
+          <span class="stat-icon">🟡</span>
+          <h3>${st2.vence_hoy}</h3>
+          <p>Vencen hoy · ${money(st2.vence_hoy_monto)}</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #3b82f6">
+          <span class="stat-icon">📋</span>
+          <h3>${st2.pendientes}</h3>
+          <p>Pendientes · ${money(st2.pendientes_monto)}</p>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #22c55e">
+          <span class="stat-icon">💰</span>
+          <h3>${money(st2.cobrado_mes)}</h3>
+          <p>Cobrado este mes</p>
+        </div>
+      </div>`;
+
+    const todayStr = isoDate(new Date());
+    document.getElementById('daily-fiados-table').innerHTML = `
+      <thead><tr>
+        <th>Cliente</th><th>Descripción</th><th>Monto</th><th>Plazo</th>
+        <th>Fecha</th><th>Vence</th><th>Saldo</th><th>Estado</th><th>Acciones</th>
+      </tr></thead>
+      <tbody>
+        ${data.fiados.length ? data.fiados.map(f => {
+          const isOverdue = f.status === 'vencida';
+          const isDueToday = f.status === 'pendiente' && f.due_date === todayStr;
+          const rowClass = isOverdue ? 'style="background:#fef2f2"' : isDueToday ? 'style="background:#fefce8"' : '';
+          return `<tr ${rowClass}>
+            <td><strong>${esc(f.customer_name)}</strong>${f.phone ? `<br><small style="color:var(--muted)">${esc(f.phone)}</small>` : ''}</td>
+            <td>${esc(f.description)}</td>
+            <td><strong>${money(f.amount)}</strong></td>
+            <td><span class="badge" style="background:#dbeafe;color:#1d4ed8">${PLAZO_LABELS[f.payment_type] || f.payment_type}</span></td>
+            <td>${f.fiado_date}</td>
+            <td>${f.due_date}</td>
+            <td><strong>${money(f.balance)}</strong></td>
+            <td>${f.status === 'pagada' ? '<span class="badge ok">✅ Pagado</span>'
+              : isOverdue ? '<span class="badge out">🔴 Vencido</span>'
+              : '<span class="badge low">⏳ Pendiente</span>'}</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-small" onclick="viewDailyFiado(${f.id})">👁 Ver</button>
+              ${f.status !== 'pagada' ? `<button class="btn btn-primary btn-small" onclick="openDailyFiadoPaymentModal(${f.id})">💰 Abonar</button>` : ''}
+              ${currentUser.role === 'admin' && f.status !== 'pagada' ? `<button class="btn btn-outline btn-small" onclick="markDailyFiadoPaid(${f.id})">✅ Pagado</button>` : ''}
+              ${currentUser.role === 'admin' ? `<button class="btn btn-danger btn-small" onclick="deleteDailyFiado(${f.id})">🗑</button>` : ''}
+            </div></td>
+          </tr>`;
+        }).join('')
+          : '<tr class="empty-row"><td colspan="9">No hay fiados registrados. ¡Crea el primero!</td></tr>'}
+      </tbody>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openDailyFiadoModal() {
+  const today = isoDate(new Date());
+  openModal('Nuevo Fiado del Día', `
+    <form id="daily-fiado-form">
+      <div class="form-grid">
+        <div><label>Fecha del fiado *</label><input type="date" name="fiado_date" value="${today}" required></div>
+        <div><label>Plazo de pago *</label>
+          <select name="payment_type" required>
+            <option value="diario">Diario (1 día)</option>
+            <option value="8dias">8 días</option>
+            <option value="semanal">Semanal</option>
+            <option value="quincenal">Quincenal</option>
+            <option value="mensual">Mensual</option>
+          </select>
+        </div>
+        <div class="full"><label>Nombre del cliente *</label><input name="customer_name" required placeholder="Ej: Juan Pérez"></div>
+        <div><label>Teléfono</label><input name="phone" placeholder="Opcional"></div>
+        <div><label>Monto total *</label><input type="number" name="amount" min="1" step="1" required placeholder="0"></div>
+        <div class="full"><label>Descripción *</label><input name="description" required placeholder="Ej: 2 pañales + detergente"></div>
+        <div class="full"><label>Observaciones</label><input name="notes" placeholder="Nota rápida..."></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Crear Fiado</button>
+      </div>
+    </form>`);
+
+  document.getElementById('daily-fiado-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      await api('/daily-fiados', { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+      closeModal(); toast('Fiado creado'); loadDailyFiados();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+async function viewDailyFiado(id) {
+  try {
+    const f = await api('/daily-fiados/' + id);
+    const isOverdue = f.status === 'vencida';
+    openModal(`Fiado #${f.id}`, `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div><small style="color:var(--muted)">Cliente</small><br><strong>${esc(f.customer_name)}</strong></div>
+        <div><small style="color:var(--muted)">Teléfono</small><br>${esc(f.phone || '—')}</div>
+        <div><small style="color:var(--muted)">Descripción</small><br>${esc(f.description)}</div>
+        <div><small style="color:var(--muted)">Plazo</small><br>${PLAZO_LABELS[f.payment_type]}</div>
+        <div><small style="color:var(--muted)">Monto total</small><br><strong>${money(f.amount)}</strong></div>
+        <div><small style="color:var(--muted)">Abonado</small><br><strong style="color:var(--positive)">${money(f.paid_amount)}</strong></div>
+        <div><small style="color:var(--muted)">Saldo</small><br><strong style="color:var(--danger)">${money(f.balance)}</strong></div>
+        <div><small style="color:var(--muted)">Estado</small><br>${f.status === 'pagada' ? '✅ Pagado' : isOverdue ? '🔴 Vencido' : '⏳ Pendiente'}</div>
+        <div><small style="color:var(--muted)">Fecha fiado</small><br>${f.fiado_date}</div>
+        <div><small style="color:var(--muted)">Vence</small><br>${f.due_date}</div>
+      </div>
+      ${f.notes ? `<p><small style="color:var(--muted)">Notas:</small> ${esc(f.notes)}</p>` : ''}
+      <h4 style="margin:16px 0 8px">Historial de abonos</h4>
+      ${f.payments.length ? `<table style="width:100%;font-size:13px"><thead><tr><th>Fecha</th><th style="text-align:right">Monto</th><th>Método</th></tr></thead><tbody>
+        ${f.payments.map(p => `<tr><td>${p.payment_date || p.created_at?.slice(0,10)}</td><td style="text-align:right;color:var(--positive);font-weight:bold">${money(p.amount)}</td><td>${p.method}</td></tr>`).join('')}
+      </tbody></table>` : '<p style="color:var(--muted)">Sin abonos registrados</p>'}
+      ${f.status !== 'pagada' ? `<div style="margin-top:12px"><a href="https://wa.me/?text=Hola ${esc(f.customer_name)}, te recordamos que tienes un fiado pendiente de ${money(f.balance)} que vence el ${f.due_date}. ¡Gracias!" target="_blank" class="btn btn-outline" style="color:#25d366;border-color:#25d366">📱 WhatsApp recordatorio</a></div>` : ''}
+    `, { wide: true });
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openDailyFiadoPaymentModal(id) {
+  const today = isoDate(new Date());
+  openModal('Registrar abono', `
+    <form id="df-payment-form">
+      <div class="form-grid">
+        <div><label>Fecha del abono</label><input type="date" name="payment_date" value="${today}"></div>
+        <div><label>Monto *</label><input type="number" name="amount" min="1" step="1" required placeholder="0"></div>
+        <div><label>Método</label>
+          <select name="method">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="full"><label>Notas</label><input name="notes" placeholder="Opcional"></div>
+        <p class="form-error"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary">Registrar abono</button>
+      </div>
+    </form>`);
+
+  document.getElementById('df-payment-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target;
+    try {
+      const r = await api('/daily-fiados/' + id + '/payments', { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+      closeModal(); toast(r.message); loadDailyFiados();
+    } catch (err) { f.querySelector('.form-error').textContent = err.message; }
+  });
+}
+
+async function markDailyFiadoPaid(id) {
+  if (!confirm('¿Marcar como pagado?')) return;
+  try { const r = await api('/daily-fiados/' + id + '/mark-paid', { method: 'POST' }); toast(r.message); loadDailyFiados(); }
+  catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteDailyFiado(id) {
+  if (!confirm('¿Eliminar este fiado?')) return;
+  try { await api('/daily-fiados/' + id, { method: 'DELETE' }); toast('Fiado eliminado'); loadDailyFiados(); }
   catch (err) { toast(err.message, 'error'); }
 }
