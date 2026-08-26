@@ -172,32 +172,101 @@
     if (!box) return;
 
     const scoreClass = h.score >= 80 ? 'excellent' : h.score >= 50 ? 'good' : h.score >= 25 ? 'warning' : 'bad';
+    const initials = h.customer_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const deuda = h.totals.deuda_actual;
+    const totalItems = h.invoices.length + h.manual_cards.length + h.daily_fiados.length;
 
     let html = `
-      <div class="credit-history-header">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-          <h3>📋 Historial de ${esc(h.customer_name)}</h3>
-          ${h.blocked
-            ? '<span class="badge out">🚫 BLOQUEADO</span>'
-            : '<span class="badge ok">✅ ACTIVO</span>'}
+      <div class="credit-profile">
+        <div class="credit-profile-header">
+          <div class="credit-avatar">${initials}</div>
+          <div class="credit-profile-info">
+            <div class="credit-profile-name-row">
+              <h2>${esc(h.customer_name)}</h2>
+              ${h.blocked
+                ? '<span class="badge out">🚫 BLOQUEADO</span>'
+                : '<span class="badge ok">✅ ACTIVO</span>'}
+            </div>
+            <p class="credit-profile-subtitle">${totalItems} registros crediticios</p>
+          </div>
         </div>
-        <div class="credit-history-grid" style="margin-top:.8rem">
-          <div class="ch-item"><small>Total fiado</small><strong style="color:var(--red)">${money(h.totals.total_fiado)}</strong></div>
-          <div class="ch-item"><small>Total pagado</small><strong style="color:var(--green)">${money(h.totals.total_pagado)}</strong></div>
-          <div class="ch-item"><small>Deuda actual</small><strong style="color:${h.totals.deuda_actual > 0 ? 'var(--red)' : 'var(--green)'}">${money(h.totals.deuda_actual)}</strong></div>
-          <div class="ch-item"><small>Confiabilidad</small><span class="score-badge ${scoreClass}">${h.score}%</span></div>
+
+        <div class="credit-score-bar">
+          <div class="credit-score-label">
+            <span>Confiabilidad crediticia</span>
+            <span class="score-badge ${scoreClass}">${h.score}%</span>
+          </div>
+          <div class="credit-score-track">
+            <div class="credit-score-fill ${scoreClass}" style="width:${h.score}%"></div>
+          </div>
         </div>
+
+        <div class="credit-profile-stats">
+          <div class="credit-profile-stat">
+            <div class="cps-icon" style="background:#fee2e2;color:var(--red)">💰</div>
+            <div class="cps-data">
+              <span class="cps-label">Total fiado</span>
+              <span class="cps-value red">${money(h.totals.total_fiado)}</span>
+            </div>
+          </div>
+          <div class="credit-profile-stat">
+            <div class="cps-icon" style="background:#dcfce7;color:var(--green)">✅</div>
+            <div class="cps-data">
+              <span class="cps-label">Total pagado</span>
+              <span class="cps-value green">${money(h.totals.total_pagado)}</span>
+            </div>
+          </div>
+          <div class="credit-profile-stat">
+            <div class="cps-icon" style="background:${deuda > 0 ? '#fee2e2' : '#dcfce7'};color:${deuda > 0 ? 'var(--red)' : 'var(--green)'}">${deuda > 0 ? '📉' : '🎉'}</div>
+            <div class="cps-data">
+              <span class="cps-label">Deuda actual</span>
+              <span class="cps-value ${deuda > 0 ? 'red' : 'green'}">${money(deuda)}</span>
+            </div>
+          </div>
+          <div class="credit-profile-stat">
+            <div class="cps-icon" style="background:#dbeafe;color:#2563eb">🧾</div>
+            <div class="cps-data">
+              <span class="cps-label">Facturas</span>
+              <span class="cps-value">${h.invoices.length}</span>
+            </div>
+          </div>
+        </div>
+
         ${h.blocked ? `
-          <div style="margin-top:.6rem;padding:.5rem .8rem;background:#fee2e2;border-radius:8px;font-size:.88rem">
-            <strong>🚫 Bloqueado:</strong> ${esc(h.blocked.reason || 'Sin motivo')} · ${fmtDate(h.blocked.blocked_at)}
+          <div class="credit-alert-blocked">
+            <span class="credit-alert-icon">⛔</span>
+            <div>
+              <strong>Cliente bloqueado</strong>
+              <p>${esc(h.blocked.reason || 'Sin motivo')} · Desde ${fmtDate(h.blocked.blocked_at)}</p>
+            </div>
+          </div>` : ''}
+
+        ${deuda > 0 && !h.blocked ? `
+          <div class="credit-alert-warning">
+            <span class="credit-alert-icon">⚠️</span>
+            <div>
+              <strong>Deuda pendiente</strong>
+              <p>Este cliente tiene ${money(deuda)} sin pagar</p>
+            </div>
+          </div>` : ''}
+
+        ${deuda === 0 && totalItems > 0 && !h.blocked ? `
+          <div class="credit-alert-success">
+            <span class="credit-alert-icon">🎉</span>
+            <div>
+              <strong>Sin deuda pendiente</strong>
+              <p>Este cliente está al día con sus pagos</p>
+            </div>
           </div>` : ''}
       </div>`;
 
-    // Facturas fiadas
     if (h.invoices.length) {
       html += `
         <div class="credit-section">
-          <h4>🧾 Facturas fiadas (${h.invoices.length})</h4>
+          <div class="credit-section-header">
+            <h4>🧾 Facturas fiadas</h4>
+            <span class="credit-section-count">${h.invoices.length}</span>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Factura</th><th>Fecha</th><th>Total</th><th>Abonado</th><th>Saldo</th><th>Estado</th></tr></thead>
@@ -219,11 +288,13 @@
         </div>`;
     }
 
-    // Tarjetas manuales
     if (h.manual_cards.length) {
       html += `
         <div class="credit-section">
-          <h4>📝 Tarjetas manuales (${h.manual_cards.length})</h4>
+          <div class="credit-section-header">
+            <h4>📝 Tarjetas manuales</h4>
+            <span class="credit-section-count">${h.manual_cards.length}</span>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Fecha</th><th>Artículo</th><th>Total</th><th>Abonado</th><th>Saldo</th><th>Estado</th></tr></thead>
@@ -245,11 +316,13 @@
         </div>`;
     }
 
-    // Fiados del día
     if (h.daily_fiados.length) {
       html += `
         <div class="credit-section">
-          <h4>⚡ Fiados del día (${h.daily_fiados.length})</h4>
+          <div class="credit-section-header">
+            <h4>⚡ Fiados del día</h4>
+            <span class="credit-section-count">${h.daily_fiados.length}</span>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Fecha</th><th>Descripción</th><th>Total</th><th>Abonado</th><th>Vence</th><th>Estado</th></tr></thead>

@@ -83,46 +83,184 @@
 .score-badge.warning { background: #fef3c7; color: var(--amber); }
 .score-badge.bad { background: #fee2e2; color: var(--red); }
 
-/* Historial del cliente */
-.credit-history-header {
-  background: #f8fafc;
+/* ============ PERFIL CREDITICIO ============ */
+.credit-profile {
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.2rem;
-  margin-bottom: 1rem;
+  overflow: hidden;
+  margin-bottom: 1.2rem;
 }
-.credit-history-header h3 { font-size: 1.1rem; margin-bottom: .5rem; }
-.credit-history-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: .8rem;
+.credit-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
 }
-.credit-history-grid .ch-item {
-  text-align: center;
-}
-.credit-history-grid .ch-item small {
-  display: block;
-  color: var(--muted);
-  font-size: .72rem;
-  text-transform: uppercase;
+.credit-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
   letter-spacing: .04em;
-  margin-bottom: .15rem;
+  flex-shrink: 0;
+  border: 3px solid rgba(255,255,255,.4);
 }
-.credit-history-grid .ch-item strong {
-  font-size: 1.2rem;
+.credit-profile-info { flex: 1; min-width: 0; }
+.credit-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+.credit-profile-name-row h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  color: #fff;
+}
+.credit-profile-name-row .badge {
+  font-size: .7rem;
+  padding: .2rem .6rem;
+}
+.credit-profile-subtitle {
+  opacity: .85;
+  font-size: .85rem;
+  margin-top: .2rem;
 }
 
-/* Secciones de historial */
-.credit-section { margin-top: 1.2rem; }
-.credit-section h4 {
-  font-size: .9rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  margin-bottom: .5rem;
-  padding-bottom: .3rem;
+/* Score bar */
+.credit-score-bar {
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
 }
+.credit-score-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .5rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.credit-score-track {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.credit-score-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+.credit-score-fill.excellent { background: var(--green); }
+.credit-score-fill.good { background: #2563eb; }
+.credit-score-fill.warning { background: var(--amber); }
+.credit-score-fill.bad { background: var(--red); }
+
+/* Stats del perfil */
+.credit-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0;
+}
+.credit-profile-stat {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: 1rem 1.2rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.credit-profile-stat:nth-child(4n) { border-right: none; }
+@media (max-width: 700px) {
+  .credit-profile-stat { border-right: none; }
+}
+.cps-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.cps-data { min-width: 0; }
+.cps-label {
+  display: block;
+  font-size: .72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.cps-value {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: .1rem;
+}
+.cps-value.red { color: var(--red); }
+.cps-value.green { color: var(--green); }
+
+/* Alertas del perfil */
+.credit-alert-blocked,
+.credit-alert-warning,
+.credit-alert-success {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .9rem 1.5rem;
+  font-size: .88rem;
+}
+.credit-alert-blocked { background: #fee2e2; border-top: 2px solid var(--red); }
+.credit-alert-warning { background: #fef3c7; border-top: 2px solid var(--amber); }
+.credit-alert-success { background: #dcfce7; border-top: 2px solid var(--green); }
+.credit-alert-icon { font-size: 1.4rem; flex-shrink: 0; }
+.credit-alert-blocked strong,
+.credit-alert-warning strong,
+.credit-alert-success strong { display: block; margin-bottom: .1rem; }
+.credit-alert-blocked p,
+.credit-alert-warning p,
+.credit-alert-success p { margin: 0; color: var(--muted); font-size: .82rem; }
+
+/* Secciones de historial */
+.credit-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.credit-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .8rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+.credit-section-header h4 {
+  font-size: .88rem;
+  margin: 0;
+  color: var(--text);
+}
+.credit-section-count {
+  background: var(--sidebar-bg);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .15rem .55rem;
+  border-radius: 99px;
+}
+.credit-section .table-wrap { margin: 0; }
 
 /* Modal de bloqueo en POS */
 .credit-block-modal {
