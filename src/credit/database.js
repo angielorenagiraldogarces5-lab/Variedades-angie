@@ -16,6 +16,18 @@ CREATE TABLE IF NOT EXISTS credit_blacklist (
 );
 CREATE INDEX IF NOT EXISTS idx_credit_blacklist_blocked ON credit_blacklist(is_blocked);
 CREATE INDEX IF NOT EXISTS idx_credit_blacklist_name ON credit_blacklist(customer_name);
+
+CREATE TABLE IF NOT EXISTS credit_risk_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_name TEXT NOT NULL,
+  note_type TEXT NOT NULL DEFAULT 'observation',
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  severity TEXT NOT NULL DEFAULT 'info',
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_credit_risk_notes_name ON credit_risk_notes(customer_name);
 `);
 
 const settingExists = db.prepare("SELECT 1 FROM settings WHERE key = 'credit_block_days'").get();

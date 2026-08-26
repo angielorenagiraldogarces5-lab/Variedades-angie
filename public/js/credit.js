@@ -17,7 +17,7 @@
     if (!el) return;
     el.innerHTML = `
       <button class="credit-tab-btn active" data-credit-tab="blacklist">🚫 Lista Negra</button>
-      <button class="credit-tab-btn" data-credit-tab="history">🔍 Historial de Crédito</button>
+      <button class="credit-tab-btn" data-credit-tab="history">🔍 Central de Riesgos</button>
       <button class="credit-tab-btn" data-credit-tab="config">⚙️ Configuración</button>
     `;
     el.querySelectorAll('.credit-tab-btn').forEach(btn => {
@@ -175,97 +175,147 @@
     const initials = h.customer_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const deuda = h.totals.deuda_actual;
     const totalItems = h.invoices.length + h.manual_cards.length + h.daily_fiados.length;
+    const r = h.risk;
+
+    const riskColors = { alto: '#ef4444', medio: '#f59e0b', bajo: '#22c55e' };
+    const riskLabels = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
+    const riskIcons = { alto: '🔴', medio: '🟡', bajo: '🟢' };
+    const decisionLabels = { aprobado: 'APROBADO', revision: 'EN REVISIÓN', denegado: 'DENEGADO' };
+    const decisionColors = { aprobado: 'var(--green)', revision: 'var(--amber)', denegado: 'var(--red)' };
 
     let html = `
-      <div class="credit-profile">
-        <div class="credit-profile-header">
-          <div class="credit-avatar">${initials}</div>
-          <div class="credit-profile-info">
-            <div class="credit-profile-name-row">
+      <div class="risk-center">
+        <div class="risk-header">
+          <div class="risk-header-top">
+            <div class="risk-avatar">${initials}</div>
+            <div class="risk-header-info">
               <h2>${esc(h.customer_name)}</h2>
-              ${h.blocked
-                ? '<span class="badge out">🚫 BLOQUEADO</span>'
-                : '<span class="badge ok">✅ ACTIVO</span>'}
+              <p class="risk-subtitle">Central de Riesgos Crediticios</p>
             </div>
-            <p class="credit-profile-subtitle">${totalItems} registros crediticios</p>
-          </div>
-        </div>
-
-        <div class="credit-score-bar">
-          <div class="credit-score-label">
-            <span>Confiabilidad crediticia</span>
-            <span class="score-badge ${scoreClass}">${h.score}%</span>
-          </div>
-          <div class="credit-score-track">
-            <div class="credit-score-fill ${scoreClass}" style="width:${h.score}%"></div>
-          </div>
-        </div>
-
-        <div class="credit-profile-stats">
-          <div class="credit-profile-stat">
-            <div class="cps-icon" style="background:#fee2e2;color:var(--red)">💰</div>
-            <div class="cps-data">
-              <span class="cps-label">Total fiado</span>
-              <span class="cps-value red">${money(h.totals.total_fiado)}</span>
-            </div>
-          </div>
-          <div class="credit-profile-stat">
-            <div class="cps-icon" style="background:#dcfce7;color:var(--green)">✅</div>
-            <div class="cps-data">
-              <span class="cps-label">Total pagado</span>
-              <span class="cps-value green">${money(h.totals.total_pagado)}</span>
-            </div>
-          </div>
-          <div class="credit-profile-stat">
-            <div class="cps-icon" style="background:${deuda > 0 ? '#fee2e2' : '#dcfce7'};color:${deuda > 0 ? 'var(--red)' : 'var(--green)'}">${deuda > 0 ? '📉' : '🎉'}</div>
-            <div class="cps-data">
-              <span class="cps-label">Deuda actual</span>
-              <span class="cps-value ${deuda > 0 ? 'red' : 'green'}">${money(deuda)}</span>
-            </div>
-          </div>
-          <div class="credit-profile-stat">
-            <div class="cps-icon" style="background:#dbeafe;color:#2563eb">🧾</div>
-            <div class="cps-data">
-              <span class="cps-label">Facturas</span>
-              <span class="cps-value">${h.invoices.length}</span>
+            <div class="risk-decision-badge" style="background:${decisionColors[r.decision]}">
+              <span class="risk-decision-icon">${r.decision === 'aprobado' ? '✅' : r.decision === 'revision' ? '🔍' : '🚫'}</span>
+              <span>${decisionLabels[r.decision]}</span>
             </div>
           </div>
         </div>
 
-        ${h.blocked ? `
-          <div class="credit-alert-blocked">
-            <span class="credit-alert-icon">⛔</span>
-            <div>
-              <strong>Cliente bloqueado</strong>
-              <p>${esc(h.blocked.reason || 'Sin motivo')} · Desde ${fmtDate(h.blocked.blocked_at)}</p>
+        <div class="risk-body">
+          <div class="risk-score-section">
+            <div class="risk-gauge">
+              <div class="risk-gauge-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="${riskColors[r.level]}" stroke-width="10"
+                    stroke-dasharray="${327}" stroke-dashoffset="${327 - (327 * h.score / 100)}"
+                    stroke-linecap="round" transform="rotate(-90 60 60)" class="risk-gauge-arc"/>
+                </svg>
+                <div class="risk-gauge-center">
+                  <span class="risk-gauge-score">${h.score}</span>
+                  <span class="risk-gauge-label">SCORE</span>
+                </div>
+              </div>
             </div>
-          </div>` : ''}
+            <div class="risk-level-info">
+              <div class="risk-level-badge" style="background:${riskColors[r.level]}20;color:${riskColors[r.level]};border:2px solid ${riskColors[r.level]}">
+                ${riskIcons[r.level]} Nivel de Riesgo: <strong>${riskLabels[r.level]}</strong>
+              </div>
+              <p class="risk-summary">${esc(r.summary)}</p>
+            </div>
+          </div>
 
-        ${deuda > 0 && !h.blocked ? `
-          <div class="credit-alert-warning">
-            <span class="credit-alert-icon">⚠️</span>
-            <div>
-              <strong>Deuda pendiente</strong>
-              <p>Este cliente tiene ${money(deuda)} sin pagar</p>
+          <div class="risk-factors">
+            <h4 class="risk-factors-title">Factores de Evaluación</h4>
+            <div class="risk-factors-list">
+              ${r.factors.length ? r.factors.map(f => `
+                <div class="risk-factor risk-factor-${f.type}">
+                  <span class="rf-icon">${f.icon}</span>
+                  <span class="rf-label">${esc(f.label)}</span>
+                </div>`).join('') : '<p class="risk-no-data">Sin factores para evaluar</p>'}
             </div>
-          </div>` : ''}
+          </div>
 
-        ${deuda === 0 && totalItems > 0 && !h.blocked ? `
-          <div class="credit-alert-success">
-            <span class="credit-alert-icon">🎉</span>
-            <div>
-              <strong>Sin deuda pendiente</strong>
-              <p>Este cliente está al día con sus pagos</p>
+          <div class="risk-kpis">
+            <div class="risk-kpi">
+              <span class="risk-kpi-icon">📊</span>
+              <div>
+                <span class="risk-kpi-value">${r.total_transactions}</span>
+                <span class="risk-kpi-label">Transacciones</span>
+              </div>
             </div>
-          </div>` : ''}
+            <div class="risk-kpi">
+              <span class="risk-kpi-icon">⏰</span>
+              <div>
+                <span class="risk-kpi-value ${r.overdue_count > 0 ? 'red' : ''}">${r.overdue_count}</span>
+                <span class="risk-kpi-label">Vencidas</span>
+              </div>
+            </div>
+            <div class="risk-kpi">
+              <span class="risk-kpi-icon">✅</span>
+              <div>
+                <span class="risk-kpi-value ${r.on_time_count > 0 ? 'green' : ''}">${r.on_time_count}</span>
+                <span class="risk-kpi-label">A tiempo</span>
+              </div>
+            </div>
+            <div class="risk-kpi">
+              <span class="risk-kpi-icon">📈</span>
+              <div>
+                <span class="risk-kpi-value red">${money(r.max_debt)}</span>
+                <span class="risk-kpi-label">Máx. deuda</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="risk-dates">
+            ${r.first_debt_date ? `<div class="risk-date-item"><span class="rdi-label">Primer crédito</span><span class="rdi-value">${fmtDate(r.first_debt_date)}</span></div>` : ''}
+            ${r.last_debt_date ? `<div class="risk-date-item"><span class="rdi-label">Último crédito</span><span class="rdi-value">${fmtDate(r.last_debt_date)}</span></div>` : ''}
+            ${r.last_payment_date ? `<div class="risk-date-item"><span class="rdi-label">Último pago</span><span class="rdi-value">${fmtDate(r.last_payment_date)}</span></div>` : ''}
+          </div>
+
+          ${h.blocked ? `
+            <div class="risk-alert risk-alert-blocked">
+              <span class="risk-alert-icon">⛔</span>
+              <div>
+                <strong>BLOQUEADO</strong>
+                <p>${esc(h.blocked.reason || 'Sin motivo')} · Desde ${fmtDate(h.blocked.blocked_at)}</p>
+              </div>
+            </div>` : ''}
+
+          ${deuda > 0 && !h.blocked ? `
+            <div class="risk-alert risk-alert-warning">
+              <span class="risk-alert-icon">⚠️</span>
+              <div>
+                <strong>DEUDA PENDIENTE</strong>
+                <p>${money(deuda)} sin pagar</p>
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+
+    html += `
+      <div class="risk-notes-section">
+        <div class="risk-section-header">
+          <h4>📋 Notas y Observaciones</h4>
+          <button class="btn btn-primary btn-small" onclick="openRiskNoteModal('${esc(h.customer_name).replace(/'/g, "\\'")}')">+ Agregar nota</button>
+        </div>
+        <div id="risk-notes-list">
+          ${h.risk_notes.length ? h.risk_notes.map(n => `
+            <div class="risk-note risk-note-${n.severity}">
+              <div class="risk-note-header">
+                <span class="risk-note-type">${n.note_type === 'warning' ? '⚠️' : n.note_type === 'block_reason' ? '🚫' : n.note_type === 'payment_issue' ? '💸' : '📝'}</span>
+                <strong>${esc(n.title)}</strong>
+                <small>${fmtDate(n.created_at)} · ${esc(n.author_name || 'Sistema')}</small>
+              </div>
+              ${n.description ? `<p class="risk-note-desc">${esc(n.description)}</p>` : ''}
+            </div>`).join('') : '<p class="risk-no-data" style="padding:1rem 0">Sin notas registradas</p>'}
+        </div>
       </div>`;
 
     if (h.invoices.length) {
       html += `
-        <div class="credit-section">
-          <div class="credit-section-header">
+        <div class="risk-section">
+          <div class="risk-section-header">
             <h4>🧾 Facturas fiadas</h4>
-            <span class="credit-section-count">${h.invoices.length}</span>
+            <span class="risk-section-count">${h.invoices.length}</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -290,10 +340,10 @@
 
     if (h.manual_cards.length) {
       html += `
-        <div class="credit-section">
-          <div class="credit-section-header">
+        <div class="risk-section">
+          <div class="risk-section-header">
             <h4>📝 Tarjetas manuales</h4>
-            <span class="credit-section-count">${h.manual_cards.length}</span>
+            <span class="risk-section-count">${h.manual_cards.length}</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -318,10 +368,10 @@
 
     if (h.daily_fiados.length) {
       html += `
-        <div class="credit-section">
-          <div class="credit-section-header">
+        <div class="risk-section">
+          <div class="risk-section-header">
             <h4>⚡ Fiados del día</h4>
-            <span class="credit-section-count">${h.daily_fiados.length}</span>
+            <span class="risk-section-count">${h.daily_fiados.length}</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -349,6 +399,61 @@
 
     box.innerHTML = html;
   }
+
+  /* ============ MODAL DE NOTAS DE RIESGO ============ */
+  window.openRiskNoteModal = function (customerName) {
+    openModal('📋 Agregar nota de riesgo', `
+      <form id="risk-note-form">
+        <div class="form-grid">
+          <div class="full">
+            <label>Tipo de nota</label>
+            <select name="note_type" required>
+              <option value="observation">📝 Observación general</option>
+              <option value="warning">⚠️ Advertencia</option>
+              <option value="block_reason">🚫 Motivo de bloqueo</option>
+              <option value="payment_issue">💸 Problema de pago</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Severidad</label>
+            <select name="severity" required>
+              <option value="info">ℹ️ Informativo</option>
+              <option value="warning">⚠️ Advertencia</option>
+              <option value="danger">🔴 Peligro</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Título *</label>
+            <input name="title" required maxlength="120" placeholder="Ej: Cliente promete pago el viernes">
+          </div>
+          <div class="full">
+            <label>Descripción</label>
+            <textarea name="description" maxlength="500" rows="3" placeholder="Detalles adicionales..."></textarea>
+          </div>
+          <p class="form-error"></p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary">💾 Guardar nota</button>
+        </div>
+      </form>`);
+
+    document.getElementById('risk-note-form').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const f = ev.target;
+      try {
+        await api('/credit/history/' + encodeURIComponent(customerName) + '/notes', {
+          method: 'POST',
+          body: Object.fromEntries(new FormData(f))
+        });
+        closeModal();
+        toast('Nota agregada');
+        searchCreditHistory();
+      } catch (err) {
+        f.querySelector('.form-error').textContent = err.message;
+      }
+    });
+  };
 
   /* ============ CONFIGURACIÓN ============ */
   async function loadCreditConfig() {

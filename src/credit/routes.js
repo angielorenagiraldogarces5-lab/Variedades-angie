@@ -80,4 +80,25 @@ router.put('/settings', authenticate, (req, res) => {
   res.json({ message: `Configuración actualizada: bloqueo automático a ${days} días`, credit_block_days: days });
 });
 
+// Agregar nota de riesgo
+router.post('/history/:name/notes', authenticate, (req, res) => {
+  const name = (req.params.name || '').trim();
+  const { title, description, note_type, severity } = req.body || {};
+  if (!title) return res.status(400).json({ error: 'El título es obligatorio' });
+
+  const info = db.prepare(`
+    INSERT INTO credit_risk_notes (customer_name, note_type, title, description, severity, created_by)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(name, note_type || 'observation', title.trim(), (description || '').trim(), severity || 'info', req.user.id);
+
+  res.status(201).json({ id: info.lastInsertRowid, message: 'Nota agregada correctamente' });
+});
+
+// Eliminar nota de riesgo
+router.delete('/history/:name/notes/:id', authenticate, (req, res) => {
+  const info = db.prepare('DELETE FROM credit_risk_notes WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Nota no encontrada' });
+  res.json({ message: 'Nota eliminada' });
+});
+
 module.exports = router;

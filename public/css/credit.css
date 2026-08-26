@@ -83,163 +83,268 @@
 .score-badge.warning { background: #fef3c7; color: var(--amber); }
 .score-badge.bad { background: #fee2e2; color: var(--red); }
 
-/* ============ PERFIL CREDITICIO ============ */
-.credit-profile {
+/* ============ CENTRAL DE RIESGOS ============ */
+.risk-center {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: 1.2rem;
 }
-.credit-profile-header {
+.risk-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  padding: 1.5rem;
+}
+.risk-header-top {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
-.credit-avatar {
-  width: 64px;
-  height: 64px;
+.risk-avatar {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: rgba(255,255,255,.25);
+  background: rgba(255,255,255,.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  letter-spacing: .04em;
   flex-shrink: 0;
-  border: 3px solid rgba(255,255,255,.4);
+  border: 3px solid rgba(255,255,255,.3);
 }
-.credit-profile-info { flex: 1; min-width: 0; }
-.credit-profile-name-row {
+.risk-header-info { flex: 1; min-width: 0; }
+.risk-header-info h2 { font-size: 1.2rem; margin: 0; color: #fff; }
+.risk-subtitle { opacity: .7; font-size: .8rem; margin-top: .15rem; }
+.risk-decision-badge {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem 1rem;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: .8rem;
+  color: #fff;
+  letter-spacing: .03em;
+}
+.risk-decision-icon { font-size: 1rem; }
+
+.risk-body { padding: 1.5rem; }
+
+/* Score gauge */
+.risk-score-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+.risk-gauge { flex-shrink: 0; }
+.risk-gauge-ring {
+  width: 110px;
+  height: 110px;
+  position: relative;
+}
+.risk-gauge-ring svg { width: 100%; height: 100%; }
+.risk-gauge-arc {
+  transition: stroke-dashoffset .8s ease;
+}
+.risk-gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.risk-gauge-score {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.risk-gauge-label {
+  font-size: .6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: .1rem;
+}
+.risk-level-info { flex: 1; min-width: 200px; }
+.risk-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .9rem;
+  border-radius: 8px;
+  font-size: .85rem;
+  margin-bottom: .5rem;
+}
+.risk-summary {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+/* Factores de evaluación */
+.risk-factors {
+  margin-bottom: 1.2rem;
+}
+.risk-factors-title {
+  font-size: .82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: .6rem;
+}
+.risk-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.risk-factor {
   display: flex;
   align-items: center;
   gap: .6rem;
-  flex-wrap: wrap;
-}
-.credit-profile-name-row h2 {
-  font-size: 1.25rem;
-  margin: 0;
-  color: #fff;
-}
-.credit-profile-name-row .badge {
-  font-size: .7rem;
-  padding: .2rem .6rem;
-}
-.credit-profile-subtitle {
-  opacity: .85;
+  padding: .5rem .8rem;
+  border-radius: 8px;
   font-size: .85rem;
-  margin-top: .2rem;
+  font-weight: 500;
 }
+.risk-factor-positive { background: #dcfce7; color: #166534; }
+.risk-factor-negative { background: #fef3c7; color: #92400e; }
+.risk-factor-critical { background: #fee2e2; color: #991b1b; }
+.risk-factor-info { background: #e0f2fe; color: #075985; }
+.risk-factor-warning { background: #fef3c7; color: #92400e; }
+.rf-icon { font-size: 1rem; flex-shrink: 0; }
+.rf-label { flex: 1; }
 
-/* Score bar */
-.credit-score-bar {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-.credit-score-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: .5rem;
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-.credit-score-track {
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 99px;
-  overflow: hidden;
-}
-.credit-score-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width .6s ease;
-}
-.credit-score-fill.excellent { background: var(--green); }
-.credit-score-fill.good { background: #2563eb; }
-.credit-score-fill.warning { background: var(--amber); }
-.credit-score-fill.bad { background: var(--red); }
-
-/* Stats del perfil */
-.credit-profile-stats {
+/* KPIs */
+.risk-kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: .6rem;
+  margin-bottom: 1.2rem;
 }
-.credit-profile-stat {
+.risk-kpi {
   display: flex;
   align-items: center;
-  gap: .8rem;
-  padding: 1rem 1.2rem;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  gap: .6rem;
+  padding: .7rem .8rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
-.credit-profile-stat:nth-child(4n) { border-right: none; }
-@media (max-width: 700px) {
-  .credit-profile-stat { border-right: none; }
-}
-.cps-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-.cps-data { min-width: 0; }
-.cps-label {
+.risk-kpi-icon { font-size: 1.2rem; flex-shrink: 0; }
+.risk-kpi-value {
   display: block;
-  font-size: .72rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.risk-kpi-value.red { color: var(--red); }
+.risk-kpi-value.green { color: var(--green); }
+.risk-kpi-label {
+  display: block;
+  font-size: .68rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .03em;
 }
-.cps-value {
-  display: block;
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-top: .1rem;
-}
-.cps-value.red { color: var(--red); }
-.cps-value.green { color: var(--green); }
 
-/* Alertas del perfil */
-.credit-alert-blocked,
-.credit-alert-warning,
-.credit-alert-success {
+/* Fechas */
+.risk-dates {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.risk-date-item {
+  display: flex;
+  flex-direction: column;
+  padding: .4rem .8rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: .78rem;
+}
+.rdi-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-size: .65rem;
+}
+.rdi-value { font-weight: 600; margin-top: .1rem; }
+
+/* Alertas del risk center */
+.risk-alert {
   display: flex;
   align-items: center;
   gap: .8rem;
-  padding: .9rem 1.5rem;
-  font-size: .88rem;
+  padding: .8rem 1rem;
+  border-radius: 8px;
+  font-size: .85rem;
+  margin-bottom: .6rem;
 }
-.credit-alert-blocked { background: #fee2e2; border-top: 2px solid var(--red); }
-.credit-alert-warning { background: #fef3c7; border-top: 2px solid var(--amber); }
-.credit-alert-success { background: #dcfce7; border-top: 2px solid var(--green); }
-.credit-alert-icon { font-size: 1.4rem; flex-shrink: 0; }
-.credit-alert-blocked strong,
-.credit-alert-warning strong,
-.credit-alert-success strong { display: block; margin-bottom: .1rem; }
-.credit-alert-blocked p,
-.credit-alert-warning p,
-.credit-alert-success p { margin: 0; color: var(--muted); font-size: .82rem; }
+.risk-alert-blocked { background: #fee2e2; border-left: 4px solid var(--red); }
+.risk-alert-warning { background: #fef3c7; border-left: 4px solid var(--amber); }
+.risk-alert-icon { font-size: 1.3rem; flex-shrink: 0; }
+.risk-alert strong { display: block; margin-bottom: .1rem; }
+.risk-alert p { margin: 0; color: var(--muted); font-size: .78rem; }
 
-/* Secciones de historial */
-.credit-section {
+/* Notas de riesgo */
+.risk-notes-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+}
+.risk-note {
+  padding: .7rem .8rem;
+  border-left: 3px solid var(--border);
+  margin-bottom: .5rem;
+  border-radius: 0 6px 6px 0;
+  background: #f8fafc;
+}
+.risk-note-info { border-left-color: #2563eb; }
+.risk-note-warning { border-left-color: var(--amber); }
+.risk-note-danger { border-left-color: var(--red); }
+.risk-note-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.risk-note-header strong { font-size: .85rem; }
+.risk-note-header small { color: var(--muted); font-size: .72rem; margin-left: auto; }
+.risk-note-type { font-size: .9rem; flex-shrink: 0; }
+.risk-note-desc {
+  margin: .3rem 0 0;
+  font-size: .8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.risk-no-data {
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: center;
+}
+
+/* Secciones de detalle */
+.risk-section {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 1rem;
   overflow: hidden;
 }
-.credit-section-header {
+.risk-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -247,12 +352,12 @@
   border-bottom: 1px solid var(--border);
   background: #f8fafc;
 }
-.credit-section-header h4 {
+.risk-section-header h4 {
   font-size: .88rem;
   margin: 0;
   color: var(--text);
 }
-.credit-section-count {
+.risk-section-count {
   background: var(--sidebar-bg);
   color: #fff;
   font-size: .75rem;
@@ -260,7 +365,13 @@
   padding: .15rem .55rem;
   border-radius: 99px;
 }
-.credit-section .table-wrap { margin: 0; }
+.risk-section .table-wrap { margin: 0; }
+
+@media (max-width: 600px) {
+  .risk-score-section { flex-direction: column; align-items: flex-start; }
+  .risk-header-top { flex-direction: column; align-items: flex-start; }
+  .risk-decision-badge { align-self: flex-start; }
+}
 
 /* Modal de bloqueo en POS */
 .credit-block-modal {

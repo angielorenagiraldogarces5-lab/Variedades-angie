@@ -21,9 +21,24 @@ function getCreditHistory(customerName) {
     invoices: [],
     manual_cards: [],
     daily_fiados: [],
+    risk_notes: [],
     totals: { total_fiado: 0, total_pagado: 0, deuda_actual: 0 },
     score: 100,
-    blocked: null
+    blocked: null,
+    risk: {
+      level: 'bajo',
+      decision: 'aprobado',
+      factors: [],
+      summary: '',
+      total_transactions: 0,
+      overdue_count: 0,
+      on_time_count: 0,
+      max_debt: 0,
+      avg_payment_days: 0,
+      first_debt_date: null,
+      last_debt_date: null,
+      last_payment_date: null
+    }
   };
 
   // Facturas fiadas
@@ -36,7 +51,6 @@ function getCreditHistory(customerName) {
   `).all(name, name);
   result.invoices = invoices;
 
-  // Pagos de facturas
   for (const inv of invoices) {
     const payments = db.prepare('SELECT * FROM invoice_payments WHERE invoice_id = ? ORDER BY created_at').all(inv.id);
     inv.payments = payments;
@@ -68,24 +82,77 @@ function getCreditHistory(customerName) {
     df.payments = payments;
   }
 
+  // Notas de riesgo
+  const riskNotes = db.prepare(`
+    SELECT rn.*, u.full_name AS author_name FROM credit_risk_notes rn
+    LEFT JOIN users u ON u.id = rn.created_by
+    WHERE LOWER(TRIM(rn.customer_name)) = LOWER(TRIM(?))
+    ORDER BY rn.created_at DESC
+  `).all(name);
+  result.risk_notes = riskNotes;
+
   // Totales
   let totalFiado = 0;
   let totalPagado = 0;
+  let overdueCount = 0;
+  let onTimeCount = 0;
+  let maxDebt = 0;
+  let firstDate = null;
+  let lastDate = null;
+  let lastPayDate = null;
+  let totalPayDays = 0;
+  let payCount = 0;
+
+  const allItems = [...invoices, ...cards, ...daily];
 
   for (const inv of invoices) {
-    totalFiado += inv.total || 0;
-    totalPagado += inv.paid_amount || 0;
-    for (const p of inv.payments) totalPagado += p.amount || 0;
+    const fiado = inv.total || 0;
+    const pagado = inv.paid_amount || 0;
+    totalFiado += fiado;
+    totalPagado += pagado;
+    for (const p of inv.payments) {
+      totalPagado += p.amount || 0;
+      if (p.created_at) { lastPayDate = p.created_at; }
+    }
+    const saldo = fiado - pagado;
+    if (saldo > maxDebt) maxDebt = saldo;
+    if (inv.status === 'pendiente') overdueCount++; else onTimeCount++;
+    const d = inv.created_at;
+    if (d && (!firstDate || d < firstDate)) firstDate = d;
+    if (d && (!lastDate || d > lastDate)) lastDate = d;
   }
   for (const card of cards) {
-    totalFiado += card.amount || 0;
-    totalPagado += card.paid_amount || 0;
-    for (const p of card.payments) totalPagado += p.amount || 0;
+    const fiado = card.amount || 0;
+    const pagado = card.paid_amount || 0;
+    totalFiado += fiado;
+    totalPagado += pagado;
+    for (const p of card.payments) {
+      totalPagado += p.amount || 0;
+      if (p.created_at) { lastPayDate = p.created_at; }
+    }
+    const saldo = fiado - pagado;
+    if (saldo > maxDebt) maxDebt = saldo;
+    if (card.status === 'pendiente') overdueCount++; else onTimeCount++;
+    const d = card.fiado_date || card.created_at;
+    if (d && (!firstDate || d < firstDate)) firstDate = d;
+    if (d && (!lastDate || d > lastDate)) lastDate = d;
   }
   for (const df of daily) {
-    totalFiado += df.amount || 0;
-    totalPagado += df.paid_amount || 0;
-    for (const p of df.payments) totalPagado += p.amount || 0;
+    const fiado = df.amount || 0;
+    const pagado = df.paid_amount || 0;
+    totalFiado += fiado;
+    totalPagado += pagado;
+    for (const p of df.payments) {
+      totalPagado += p.amount || 0;
+      if (p.created_at) { lastPayDate = p.created_at; }
+    }
+    const saldo = fiado - pagado;
+    if (saldo > maxDebt) maxDebt = saldo;
+    const isOverdue = df.status === 'pendiente' || df.status === 'vencida';
+    if (isOverdue) overdueCount++; else onTimeCount++;
+    const d = df.fiado_date || df.created_at;
+    if (d && (!firstDate || d < firstDate)) firstDate = d;
+    if (d && (!lastDate || d > lastDate)) lastDate = d;
   }
 
   result.totals = {
@@ -99,10 +166,70 @@ function getCreditHistory(customerName) {
     result.score = Math.round((totalPagado / totalFiado) * 100);
   }
 
-  // Verificar si está bloqueado
-  result.blocked = checkBlocked(name);
+  // Análisis de riesgo
+  const deuda = result.totals.deuda_actual;
+  const totalTx = invoices.length + cards.length + daily.length;
+  const factors = [];
+
+  if (overdueCount > 0) {
+    factors.push({ label: `${overdueCount} deuda(s) vencida(s)`, type: 'negative', icon: '⏰' });
+  }
+  if (deuda > 0) {
+    factors.push({ label: `Deuda pendiente: ${fmtMoney(deuda)}`, type: 'negative', icon: '💰' });
+  }
+  if (result.blocked) {
+    factors.push({ label: `Bloqueado: ${result.blocked.reason || 'Sin motivo'}`, type: 'critical', icon: '🚫' });
+  }
+  if (maxDebt > 500000) {
+    factors.push({ label: `Máxima deuda alcanzada: ${fmtMoney(maxDebt)}`, type: 'negative', icon: '📈' });
+  }
+  if (onTimeCount > 0 && overdueCount === 0) {
+    factors.push({ label: `${onTimeCount} transacción(es) pagada(s) a tiempo`, type: 'positive', icon: '✅' });
+  }
+  if (totalTx === 0) {
+    factors.push({ label: 'Sin historial crediticio previo', type: 'info', icon: '📋' });
+  }
+  if (deuda === 0 && totalTx > 0 && !result.blocked) {
+    factors.push({ label: 'Todas las deudas saldadas', type: 'positive', icon: '🎉' });
+  }
+  if (result.score >= 80) {
+    factors.push({ label: `Confiabilidad alta (${result.score}%)`, type: 'positive', icon: '⭐' });
+  } else if (result.score >= 50) {
+    factors.push({ label: `Confiabilidad media (${result.score}%)`, type: 'warning', icon: '⚠️' });
+  } else if (result.score < 50 && totalTx > 0) {
+    factors.push({ label: `Confiabilidad baja (${result.score}%)`, type: 'negative', icon: '📉' });
+  }
+
+  // Determinar nivel de riesgo
+  let riskLevel = 'bajo';
+  let decision = 'aprobado';
+  if (result.blocked || overdueCount >= 3 || (deuda > 0 && result.score < 30)) {
+    riskLevel = 'alto';
+    decision = 'denegado';
+  } else if (overdueCount >= 1 || deuda > 0 || result.score < 60) {
+    riskLevel = 'medio';
+    decision = 'revision';
+  }
+
+  result.risk = {
+    level: riskLevel,
+    decision,
+    factors,
+    summary: factors.map(f => f.label).join('. ') || 'Sin datos suficientes para evaluar',
+    total_transactions: totalTx,
+    overdue_count: overdueCount,
+    on_time_count: onTimeCount,
+    max_debt: maxDebt,
+    first_debt_date: firstDate,
+    last_debt_date: lastDate,
+    last_payment_date: lastPayDate
+  };
 
   return result;
+}
+
+function fmtMoney(n) {
+  return '$' + Number(n || 0).toLocaleString('es-CO');
 }
 
 function getBlockedDays() {
