@@ -28,6 +28,16 @@ CREATE TABLE IF NOT EXISTS credit_risk_notes (
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 CREATE INDEX IF NOT EXISTS idx_credit_risk_notes_name ON credit_risk_notes(customer_name);
+
+CREATE TABLE IF NOT EXISTS credit_unblock_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  blacklist_id INTEGER,
+  customer_name TEXT NOT NULL,
+  unblocked_by INTEGER REFERENCES users(id),
+  unblocked_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_unblock_log_name ON credit_unblock_log(customer_name);
+CREATE INDEX IF NOT EXISTS idx_unblock_log_date ON credit_unblock_log(unblocked_at);
 `);
 
 const settingExists = db.prepare("SELECT 1 FROM settings WHERE key = 'credit_block_days'").get();

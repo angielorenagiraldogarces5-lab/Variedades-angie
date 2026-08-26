@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db = require('../database');
+const bcrypt = require('bcryptjs');
 require('./database');
 const { authenticate } = require('../middleware/auth');
 const { checkBlocked, getCreditHistory, getBlockedDays, autoBlock } = require('./utils');
@@ -41,9 +42,23 @@ router.post('/blacklist', authenticate, (req, res) => {
 
 // Desbloquear
 router.delete('/blacklist/:id', authenticate, (req, res) => {
-  const info = db.prepare('UPDATE credit_blacklist SET is_blocked = 0 WHERE id = ? AND is_blocked = 1').run(req.params.id);
-  if (info.changes === 0) return res.status(404).json({ error: 'Registro no encontrado o ya desbloqueado' });
+  const row = db.prepare('SELECT * FROM credit_blacklist WHERE id = ? AND is_blocked = 1').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Registro no encontrado o ya desbloqueado' });
+  db.prepare('UPDATE credit_blacklist SET is_blocked = 0 WHERE id = ?').run(req.params.id);
+  db.prepare('INSERT INTO credit_unblock_log (blacklist_id, customer_name, unblocked_by) VALUES (?, ?, ?)').run(row.id, row.customer_name, req.user.id);
   res.json({ message: 'Cliente desbloqueado correctamente' });
+});
+
+// Historial de desbloqueos
+router.get('/unblock-log', authenticate, (req, res) => {
+  const logs = db.prepare(`
+    SELECT ul.*, u.full_name AS unblocked_by_name
+    FROM credit_unblock_log ul
+    LEFT JOIN users u ON u.id = ul.unblocked_by
+    ORDER BY ul.unblocked_at DESC
+    LIMIT 200
+  `).all();
+  res.json(logs);
 });
 
 // Verificar si un cliente está bloqueado
@@ -66,6 +81,17 @@ router.post('/auto-block', authenticate, (req, res) => {
     ? `${result.blocked_count} cliente(s) bloqueado(s) automáticamente`
     : 'No se encontraron morosos nuevos para bloquear';
   res.json({ message: msg, ...result });
+});
+
+// Verificar contraseña de desbloqueo (usa la contraseña del admin)
+router.post('/verify-unblock-password', authenticate, (req, res) => {
+  const { password } = req.body || {};
+  if (!password) return res.status(400).json({ error: 'La contraseña es obligatoria' });
+  const admin = db.prepare("SELECT password_hash FROM users WHERE role = 'admin' AND active = 1 LIMIT 1").get();
+  if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
+    return res.status(401).json({ error: 'Contraseña incorrecta' });
+  }
+  res.json({ valid: true });
 });
 
 // Configuración

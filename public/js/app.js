@@ -1986,11 +1986,13 @@ function renderCreditStudyResult(h, onApproved) {
   }
   if (isBlocked) {
     document.getElementById('cs-unblock-btn').addEventListener('click', async () => {
-      try {
-        await api('/credit/blacklist/' + h.blocked.id, { method: 'DELETE' });
-        toast('Cliente desbloqueado');
-        runCreditStudy(onApproved);
-      } catch (err) { toast(err.message, 'error'); }
+      showUnblockPasswordModal(async () => {
+        try {
+          await api('/credit/blacklist/' + h.blocked.id, { method: 'DELETE' });
+          toast('Cliente desbloqueado');
+          runCreditStudy(onApproved);
+        } catch (err) { toast(err.error || err.message, 'error'); }
+      });
     });
   }
 }

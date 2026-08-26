@@ -18,6 +18,7 @@
     el.innerHTML = `
       <button class="credit-tab-btn active" data-credit-tab="blacklist">🚫 Lista Negra</button>
       <button class="credit-tab-btn" data-credit-tab="history">🔍 Central de Riesgos</button>
+      <button class="credit-tab-btn" data-credit-tab="unblock-log">📋 Historial de Desbloqueos</button>
       <button class="credit-tab-btn" data-credit-tab="config">⚙️ Configuración</button>
     `;
     el.querySelectorAll('.credit-tab-btn').forEach(btn => {
@@ -26,6 +27,7 @@
         el.querySelectorAll('.credit-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.creditTab === currentTab));
         document.querySelectorAll('.credit-panel').forEach(p => p.classList.toggle('active', p.id === 'credit-panel-' + currentTab));
         if (currentTab === 'blacklist') loadBlacklist();
+        if (currentTab === 'unblock-log') loadUnblockLog();
         if (currentTab === 'config') loadCreditConfig();
       });
     });
@@ -33,6 +35,7 @@
 
   function loadCreditView() {
     if (currentTab === 'blacklist') loadBlacklist();
+    if (currentTab === 'unblock-log') loadUnblockLog();
     if (currentTab === 'config') loadCreditConfig();
   }
 
@@ -144,15 +147,70 @@
   };
 
   window.unblockCredit = async function (id, name) {
-    if (!confirm(`¿Desbloquear a "${name}"? Podrá volver a fiarse.`)) return;
+    showUnblockPasswordModal(async () => {
+      try {
+        const r = await api('/credit/blacklist/' + id, { method: 'DELETE' });
+        toast(r.message);
+        loadBlacklist();
+      } catch (err) {
+        toast(err.error || err.message, 'error');
+      }
+    });
+  };
+
+  /* ============ HISTORIAL DE DESBLOQUEOS ============ */
+  async function loadUnblockLog() {
     try {
-      const r = await api('/credit/blacklist/' + id, { method: 'DELETE' });
-      toast(r.message);
-      loadBlacklist();
+      const logs = await api('/credit/unblock-log');
+      renderUnblockLog(logs);
     } catch (err) {
       toast(err.message, 'error');
     }
-  };
+  }
+
+  function renderUnblockLog(logs) {
+    const box = document.getElementById('credit-unblock-log-content');
+    if (!box) return;
+
+    const stats = `
+      <div class="credit-stats">
+        <div class="credit-stat-card">
+          <span class="stat-icon">📋</span>
+          <h3>${logs.length}</h3>
+          <p>Desbloqueos registrados</p>
+        </div>
+        <div class="credit-stat-card">
+          <span class="stat-icon">👤</span>
+          <h3>${new Set(logs.map(l => l.unblocked_by)).size}</h3>
+          <p>Empleados que desbloquearon</p>
+        </div>
+        <div class="credit-stat-card">
+          <span class="stat-icon">📅</span>
+          <h3>${logs.length ? fmtDate(logs[0].unblocked_at) : '—'}</h3>
+          <p>Último desbloqueo</p>
+        </div>
+      </div>`;
+
+    if (!logs.length) {
+      box.innerHTML = stats + '<p class="pos-empty" style="padding:2rem 0">No hay desbloqueos registrados aún.</p>';
+      return;
+    }
+
+    const rows = logs.map(l => `
+      <tr>
+        <td><strong>${esc(l.customer_name)}</strong></td>
+        <td>${esc(l.unblocked_by_name || 'Desconocido')}</td>
+        <td>${fmtDate(l.unblocked_at)}</td>
+      </tr>`).join('');
+
+    box.innerHTML = stats + `
+      <div class="table-wrap" style="margin-top:1rem">
+        <table>
+          <thead><tr><th>Cliente</th><th>Desbloqueado por</th><th>Fecha y hora</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
 
   /* ============ HISTORIAL DE CRÉDITO ============ */
   window.searchCreditHistory = async function () {
@@ -478,6 +536,12 @@
               <button type="submit" class="btn btn-primary">💾 Guardar</button>
             </div>
           </form>
+        </div>
+
+        <div class="credit-config-card" style="margin-top:1.5rem;border-left:4px solid #f59e0b">
+          <h4 style="margin-bottom:1rem">🔐 Desbloqueo protegido</h4>
+          <p class="config-hint">Para desbloquear un cliente se requiere ingresar la contraseña del administrador. Esto evita que los empleados desbloqueen clientes sin autorización.</p>
+          <p style="font-size:.82rem;color:var(--muted);margin:0">La contraseña de desbloqueo es la misma contraseña con la que el admin inicia sesión. Si necesitas cambiarla, ve a Configuración general > Cambiar contraseña.</p>
         </div>`;
 
       document.getElementById('credit-config-form').addEventListener('submit', async ev => {
@@ -537,13 +601,54 @@
       </div>`);
 
     document.getElementById('credit-unblock-and-continue').addEventListener('click', async () => {
+      showUnblockPasswordModal(async () => {
+        try {
+          await api('/credit/blacklist/' + info.id, { method: 'DELETE' });
+          closeModal();
+          toast('Cliente desbloqueado');
+          if (onSuccess) onSuccess();
+        } catch (err) {
+          toast(err.error || err.message, 'error');
+        }
+      });
+    });
+  }
+
+  /* ============ MODAL DE CONTRASEÑA DE DESBLOQUEO ============ */
+  function showUnblockPasswordModal(onVerified) {
+    openModal('🔐 Contraseña requerida', `
+      <div class="unblock-password-modal">
+        <p style="margin-bottom:.8rem;color:var(--muted);font-size:.85rem">Ingresa la contraseña del administrador para autorizar el desbloqueo.</p>
+        <form id="unblock-pwd-form">
+          <div class="form-grid">
+            <div class="full">
+              <label>Contraseña de desbloqueo</label>
+              <input type="password" name="password" id="unblock-pwd-input" required autocomplete="off" placeholder="Contraseña del administrador">
+            </div>
+            <p class="form-error" id="unblock-pwd-error"></p>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+            <button type="submit" class="btn btn-green">🔓 Desbloquear</button>
+          </div>
+        </form>
+      </div>`);
+
+    setTimeout(() => document.getElementById('unblock-pwd-input')?.focus(), 100);
+
+    document.getElementById('unblock-pwd-form').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const pwd = document.getElementById('unblock-pwd-input').value;
+      const errorEl = document.getElementById('unblock-pwd-error');
+      errorEl.textContent = '';
       try {
-        await api('/credit/blacklist/' + info.id, { method: 'DELETE' });
+        await api('/credit/verify-unblock-password', { method: 'POST', body: { password: pwd } });
         closeModal();
-        toast('Cliente desbloqueado');
-        if (onSuccess) onSuccess();
+        onVerified();
       } catch (err) {
-        toast(err.message, 'error');
+        errorEl.textContent = err.error || 'Contraseña incorrecta';
+        document.getElementById('unblock-pwd-input').value = '';
+        document.getElementById('unblock-pwd-input').focus();
       }
     });
   }
@@ -554,5 +659,6 @@
   window.searchCreditHistory = searchCreditHistory;
   window.checkPosBlocked = checkPosBlocked;
   window.showBlockedModal = showBlockedModal;
+  window.showUnblockPasswordModal = showUnblockPasswordModal;
 
 })();
