@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db = require('../database');
+require('./database');
 const { authenticate } = require('../middleware/auth');
 const { checkBlocked, getCreditHistory, getBlockedDays, autoBlock } = require('./utils');
 
