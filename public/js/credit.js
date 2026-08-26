@@ -175,7 +175,7 @@
     const initials = h.customer_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const deuda = h.totals.deuda_actual;
     const totalItems = h.invoices.length + h.manual_cards.length + h.daily_fiados.length;
-    const r = h.risk;
+    const r = h.risk || { level: 'bajo', decision: 'aprobado', factors: [], summary: 'Sin datos', total_transactions: 0, overdue_count: 0, on_time_count: 0, max_debt: 0, first_debt_date: null, last_debt_date: null, last_payment_date: null };
 
     const riskColors = { alto: '#ef4444', medio: '#f59e0b', bajo: '#22c55e' };
     const riskLabels = { alto: 'ALTO', medio: 'MEDIO', bajo: 'BAJO' };
