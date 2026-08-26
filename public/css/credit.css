@@ -184,9 +184,11 @@
   margin-bottom: .5rem;
 }
 .risk-summary {
-  color: var(--muted);
-  font-size: .82rem;
-  line-height: 1.4;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 500;
+  margin-top: .4rem;
 }
 
 /* Factores de evaluación */
