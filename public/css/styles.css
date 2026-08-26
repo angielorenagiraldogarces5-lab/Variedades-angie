@@ -422,6 +422,7 @@ dialog#modal.wide { width: min(680px, 94vw); }
 .debt-card.auto { border-left-color: #2563eb; }
 .debt-card.pagada { border-left-color: var(--green); }
 .debt-card.anulada { border-left-color: var(--muted); opacity: .6; }
+.debt-card.blocked { border-left-color: #dc2626; background: #fef2f2; }
 
 .debt-info { flex: 1 1 230px; min-width: 0; display: flex; flex-direction: column; gap: .35rem; }
 .debt-card-top { display: flex; align-items: center; gap: .65rem; min-width: 0; }

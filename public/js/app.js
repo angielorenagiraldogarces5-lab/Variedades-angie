@@ -2,7 +2,7 @@
 let token = localStorage.getItem('token') || null;
 let currentUser = null;
 let storeSettings = { store_name: 'Variedades Angie', nit: '', address: '', phone: '', commission_rate: '15', invoice_footer: '' };
-const moneyFmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyFmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 function money(n) { return '$' + moneyFmt.format(Math.round(Number(n) || 0)); }
 function esc(s) {
@@ -1802,13 +1802,14 @@ function renderManualCards(cards) {
     const balance = c.amount - c.paid_amount;
     const pct = Math.min(100, Math.round((c.paid_amount / c.amount) * 100));
     const isOld = c.status === 'pendiente' && c.days_old >= 90;
+    const isBlocked = c.is_blocked;
     return `
-      <div class="debt-card manual ${c.status}">
+      <div class="debt-card manual ${c.status}${isBlocked ? ' blocked' : ''}">
         <div class="debt-info">
           <div class="debt-card-top">
             <span class="avatar">${esc(c.customer_name.trim().charAt(0).toUpperCase())}</span>
             <div class="debt-card-id">
-              <h4 title="${esc(c.customer_name)}">${esc(c.customer_name)}</h4>
+              <h4 title="${esc(c.customer_name)}">${esc(c.customer_name)}${isBlocked ? ' <span class="badge" style="background:#dc2626;color:#fff;margin-left:4px">🚫 BLOQUEADO</span>' : ''}</h4>
               <small>${esc(c.phone || c.city || 'Sin contacto')}${c.created_by ? ` · ✍️ Registró: ${esc(c.created_by)}` : ''}</small>
             </div>
             <span class="badge pt-${c.payment_type}">${PAY_TYPE_LABELS[c.payment_type]}</span>
@@ -2064,6 +2065,8 @@ async function openCardDetail(id) {
         <div><strong>Fiado registrado por</strong>${esc(c.created_by || '—')}</div>
       </div>
 
+      <div id="card-credit-info"></div>
+
       ${c.schedule ? `
       <div class="due-box">
         <div class="due-next">
@@ -2141,6 +2144,30 @@ async function openCardDetail(id) {
       ev.preventDefault();
       registerManualPayment(c.id, new FormData(ev.target), ev.target);
     });
+
+    // Cargar info crediticia del cliente
+    const creditBox = document.getElementById('card-credit-info');
+    if (creditBox) {
+      try {
+        const cr = await api('/collections/credit-check/' + encodeURIComponent(c.customer_name));
+        const riskIcons = { bajo: '🟢', medio: '🟡', alto: '🔴' };
+        creditBox.innerHTML = `
+          <div style="margin:12px 0;padding:12px;border-radius:8px;background:${cr.blocked ? '#fef2f2' : '#f0fdf4'};border:1px solid ${cr.blocked ? '#fca5a5' : '#bbf7d0'}">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <strong style="font-size:13px">📊 Histórico crediticio:</strong>
+              ${cr.blocked ? '<span class="badge" style="background:#dc2626;color:#fff">🚫 BLOQUEADO</span>' : '<span class="badge ok">✅ Activo</span>'}
+              ${cr.score !== null ? `<span class="badge">Score: ${cr.score}%</span>` : ''}
+              ${cr.risk_level ? `<span class="badge">${riskIcons[cr.risk_level] || ''} Riesgo ${cr.risk_level.toUpperCase()}</span>` : ''}
+              ${cr.deuda_actual > 0 ? `<span class="badge out">Deuda total: ${money(cr.deuda_actual)}</span>` : ''}
+              ${cr.overdue_count > 0 ? `<span class="badge out">${cr.overdue_count} deuda(s) vencida(s)</span>` : ''}
+              ${cr.total_transactions > 0 ? `<span class="badge">${cr.total_transactions} transacción(es)</span>` : ''}
+            </div>
+            ${cr.blocked ? `<p style="margin:6px 0 0;font-size:12px;color:#b91c1c">Motivo: ${esc(cr.blocked_info?.reason || 'Sin motivo')} — Desbloquear desde Estudio Crediticio</p>` : ''}
+          </div>`;
+      } catch {
+        creditBox.innerHTML = '';
+      }
+    }
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -2788,7 +2815,7 @@ async function loadCashRegisters() {
         ${list.length ? list.map(cr => {
           const diffClass = cr.difference > 0 ? 'positive' : cr.difference < 0 ? 'negative' : '';
           const diffLabel = cr.status === 'cerrada'
-            ? (cr.difference > 0 ? `<span class="positive">+$${Math.abs(cr.difference).toFixed(2)}</span>` : cr.difference < 0 ? `<span class="negative">-$${Math.abs(cr.difference).toFixed(2)}</span>` : '$0.00')
+            ? (cr.difference > 0 ? `<span class="positive">+$${Math.abs(cr.difference).toLocaleString('es-AR')}</span>` : cr.difference < 0 ? `<span class="negative">-$${Math.abs(cr.difference).toLocaleString('es-AR')}</span>` : '$0')
             : '—';
           return `<tr>
             <td><strong>#${cr.number}</strong></td>
@@ -2894,8 +2921,8 @@ function closeCashRegisterModal(crId) {
     try {
       const r = await api(`/cashregister/${crId}/close`, { method: 'POST', body: Object.fromEntries(new FormData(f)) });
       closeModal();
-      if (r.difference > 0) toast(`Caja cerrada. Sobrante: $${r.difference.toFixed(2)}`, 'success');
-      else if (r.difference < 0) toast(`Caja cerrada. Faltante: $${Math.abs(r.difference).toFixed(2)}`, 'error');
+      if (r.difference > 0) toast(`Caja cerrada. Sobrante: $${r.difference.toLocaleString('es-AR')}`, 'success');
+      else if (r.difference < 0) toast(`Caja cerrada. Faltante: $${Math.abs(r.difference).toLocaleString('es-AR')}`, 'error');
       else toast('Caja cerrada. Todo cuadra');
       loadCashRegisters();
     } catch (err) { f.querySelector('.form-error').textContent = err.message; }
@@ -2913,7 +2940,7 @@ async function viewCashRegister(crId) {
         <div class="stat-card"><span class="stat-icon">📉</span><h3 class="negative">${money(cr.total_expenses)}</h3><p>Egresos</p></div>
         <div class="stat-card"><span class="stat-icon">🧮</span><h3>${money(cr.expected_total)}</h3><p>Esperado</p></div>
       </div>
-      ${cr.status === 'cerrada' ? `<p class="config-hint">Cerrada por ${esc(cr.closed_by)} · Contado: ${money(cr.counted_amount)} · Diferencia: ${cr.difference >= 0 ? '+' : ''}$${cr.difference.toFixed(2)}${cr.close_notes ? ' · ' + esc(cr.close_notes) : ''}</p>` : ''}
+      ${cr.status === 'cerrada' ? `<p class="config-hint">Cerrada por ${esc(cr.closed_by)} · Contado: ${money(cr.counted_amount)} · Diferencia: ${cr.difference >= 0 ? '+' : ''}$${cr.difference.toLocaleString('es-AR')}${cr.close_notes ? ' · ' + esc(cr.close_notes) : ''}</p>` : ''}
       <table class="mini-table">
         <thead><tr><th>#</th><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Registrado por</th><th>Fecha</th>${isOpen ? '<th></th>' : ''}</tr></thead>
         <tbody>
@@ -3440,9 +3467,10 @@ async function loadDailyFiados() {
         ${data.fiados.length ? data.fiados.map(f => {
           const isOverdue = f.status === 'vencida';
           const isDueToday = f.status === 'pendiente' && f.due_date === todayStr;
-          const rowClass = isOverdue ? 'style="background:#fef2f2"' : isDueToday ? 'style="background:#fefce8"' : '';
+          const isBlocked = f.is_blocked;
+          const rowClass = isBlocked ? 'style="background:#fef2f2;border-left:3px solid #dc2626"' : isOverdue ? 'style="background:#fef2f2;border-left:3px solid #ef4444"' : isDueToday ? 'style="background:#fefce8;border-left:3px solid #f59e0b"' : '';
           return `<tr ${rowClass}>
-            <td><strong>${esc(f.customer_name)}</strong>${f.phone ? `<br><small style="color:var(--muted)">${esc(f.phone)}</small>` : ''}</td>
+            <td><strong>${esc(f.customer_name)}</strong>${f.phone ? `<br><small style="color:var(--muted)">${esc(f.phone)}</small>` : ''}${f.is_blocked ? '<br><span class="badge" style="background:#dc2626;color:#fff;font-size:11px">🚫 BLOQUEADO</span>' : ''}</td>
             <td>${esc(f.description)}</td>
             <td><strong>${money(f.amount)}</strong></td>
             <td><span class="badge" style="background:#dbeafe;color:#1d4ed8">${PLAZO_LABELS[f.payment_type] || f.payment_type}</span></td>
@@ -3510,6 +3538,25 @@ async function viewDailyFiado(id) {
   try {
     const f = await api('/daily-fiados/' + id);
     const isOverdue = f.status === 'vencida';
+
+    let creditInfo = '';
+    try {
+      const cr = await api('/daily-fiados/credit-check/' + encodeURIComponent(f.customer_name));
+      const riskIcons = { bajo: '🟢', medio: '🟡', alto: '🔴' };
+      creditInfo = `
+        <div style="margin:12px 0;padding:12px;border-radius:8px;background:${cr.blocked ? '#fef2f2' : '#f0fdf4'};border:1px solid ${cr.blocked ? '#fca5a5' : '#bbf7d0'}">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <strong style="font-size:13px">📊 Crédito:</strong>
+            ${cr.blocked ? '<span class="badge" style="background:#dc2626;color:#fff">🚫 BLOQUEADO</span>' : '<span class="badge ok">✅ Activo</span>'}
+            ${cr.score !== null ? `<span class="badge">Score: ${cr.score}%</span>` : ''}
+            ${cr.risk_level ? `<span class="badge">${riskIcons[cr.risk_level] || ''} Riesgo ${cr.risk_level.toUpperCase()}</span>` : ''}
+            ${cr.deuda_actual > 0 ? `<span class="badge out">Deuda: ${money(cr.deuda_actual)}</span>` : ''}
+            ${cr.overdue_count > 0 ? `<span class="badge out">${cr.overdue_count} vencida(s)</span>` : ''}
+          </div>
+          ${cr.blocked ? `<p style="margin:6px 0 0;font-size:12px;color:#b91c1c">Motivo: ${esc(cr.blocked_info?.reason || 'Sin motivo')} — Desbloquear desde Estudio Crediticio</p>` : ''}
+        </div>`;
+    } catch {}
+
     openModal(`Fiado #${f.id}`, `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div><small style="color:var(--muted)">Cliente</small><br><strong>${esc(f.customer_name)}</strong></div>
@@ -3523,6 +3570,7 @@ async function viewDailyFiado(id) {
         <div><small style="color:var(--muted)">Fecha fiado</small><br>${f.fiado_date}</div>
         <div><small style="color:var(--muted)">Vence</small><br>${f.due_date}</div>
       </div>
+      ${creditInfo}
       ${f.notes ? `<p><small style="color:var(--muted)">Notas:</small> ${esc(f.notes)}</p>` : ''}
       <h4 style="margin:16px 0 8px">Historial de abonos</h4>
       ${f.payments.length ? `<table style="width:100%;font-size:13px"><thead><tr><th>Fecha</th><th style="text-align:right">Monto</th><th>Método</th></tr></thead><tbody>

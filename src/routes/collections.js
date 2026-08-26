@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
+const { checkBlocked } = require('../credit/utils');
 
 const PAYMENT_TYPES = ['semanal', 'quincenal', 'mensual', 'colaborador'];
 const METHODS = ['efectivo', 'transferencia', 'otro'];
@@ -117,6 +118,12 @@ router.get('/', authenticate, (req, res) => {
 
   // Fechas de cobro automáticas + orden por próximo cobro
   for (const c of manual_cards) c.schedule = c.status === 'pendiente' ? buildSchedule(c) : null;
+
+  // Estado bloqueado de clientes
+  const blockedNames = db.prepare("SELECT LOWER(TRIM(customer_name)) AS name FROM credit_blacklist WHERE is_blocked = 1")
+    .all().reduce((set, r) => { set.add(r.name); return set; }, new Set());
+  for (const c of manual_cards) c.is_blocked = blockedNames.has((c.customer_name || '').trim().toLowerCase());
+
   manual_cards.sort((a, b) => {
     const pa = a.status === 'pendiente', pb = b.status === 'pendiente';
     if (pa !== pb) return pa ? -1 : 1;
@@ -268,6 +275,15 @@ router.post('/cards', authenticate, (req, res) => {
   } else {
     v = validateCardBody(body);
     if (v.error) return res.status(400).json({ error: v.error });
+  }
+
+  const blockedInfo = checkBlocked(v.customerName);
+  if (blockedInfo) {
+    return res.status(403).json({
+      error: `Cliente bloqueado: ${blockedInfo.reason || 'Sin motivo'}. No se puede crear tarjetas. Desbloquealo desde Estudio Crediticio.`,
+      blocked: true,
+      blocked_info: blockedInfo
+    });
   }
 
   db.exec('BEGIN IMMEDIATE');
@@ -464,6 +480,27 @@ router.delete('/cards/:id', authenticate, requireAdmin, (req, res) => {
   const info = db.prepare('DELETE FROM fiado_cards WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'Tarjeta no encontrada' });
   res.json({ message: 'Tarjeta eliminada' });
+});
+
+/* Verificar estado crediticio de un cliente (para mostrar en tarjetas) */
+router.get('/credit-check/:name', authenticate, (req, res) => {
+  const { checkBlocked, getCreditHistory } = require('../credit/utils');
+  const name = (req.params.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+
+  const blocked = checkBlocked(name);
+  let history = null;
+  try { history = getCreditHistory(name); } catch {}
+
+  res.json({
+    blocked: !!blocked,
+    blocked_info: blocked || null,
+    score: history?.score ?? null,
+    risk_level: history?.risk?.level ?? null,
+    deuda_actual: history?.totals?.deuda_actual ?? 0,
+    total_transactions: history?.risk?.total_transactions ?? 0,
+    overdue_count: history?.risk?.overdue_count ?? 0
+  });
 });
 
 /* ================================================================
