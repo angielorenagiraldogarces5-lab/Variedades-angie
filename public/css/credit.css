@@ -1,0 +1,165 @@
+/* ============ ESTUDIO CREDITICIO ============ */
+
+.credit-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.credit-stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  text-align: center;
+}
+.credit-stat-card .stat-icon { font-size: 1.5rem; }
+.credit-stat-card h3 { font-size: 1.5rem; margin: .25rem 0; }
+.credit-stat-card p { color: var(--muted); font-size: .8rem; }
+
+/* Tabs del módulo */
+.credit-tabs {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.credit-tab-btn {
+  padding: .55rem 1.1rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+  font-size: .9rem;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: inherit;
+  transition: all .15s;
+}
+.credit-tab-btn:hover { border-color: var(--primary); color: var(--text); }
+.credit-tab-btn.active { background: var(--sidebar-bg); color: #fff; border-color: var(--sidebar-bg); }
+
+/* Panel de cada tab */
+.credit-panel { display: none; }
+.credit-panel.active { display: block; }
+
+/* Lista de bloqueados */
+.blocked-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--red);
+  border-radius: var(--radius);
+  padding: .85rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .6rem;
+  flex-wrap: wrap;
+}
+.blocked-card.auto { border-left-color: var(--amber); }
+.blocked-info { flex: 1 1 200px; min-width: 0; }
+.blocked-info h4 { font-size: .95rem; margin-bottom: .15rem; }
+.blocked-info small { color: var(--muted); }
+.blocked-meta {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  min-width: 140px;
+}
+.blocked-meta small { color: var(--muted); font-size: .75rem; }
+.blocked-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+
+/* Score badge */
+.score-badge {
+  display: inline-block;
+  padding: .3rem .8rem;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: .85rem;
+}
+.score-badge.excellent { background: #dcfce7; color: var(--green); }
+.score-badge.good { background: #dbeafe; color: #2563eb; }
+.score-badge.warning { background: #fef3c7; color: var(--amber); }
+.score-badge.bad { background: #fee2e2; color: var(--red); }
+
+/* Historial del cliente */
+.credit-history-header {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.credit-history-header h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+.credit-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .8rem;
+}
+.credit-history-grid .ch-item {
+  text-align: center;
+}
+.credit-history-grid .ch-item small {
+  display: block;
+  color: var(--muted);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: .15rem;
+}
+.credit-history-grid .ch-item strong {
+  font-size: 1.2rem;
+}
+
+/* Secciones de historial */
+.credit-section { margin-top: 1.2rem; }
+.credit-section h4 {
+  font-size: .9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: .5rem;
+  padding-bottom: .3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Modal de bloqueo en POS */
+.credit-block-modal {
+  text-align: center;
+  padding: 1rem 0;
+}
+.credit-block-modal .block-icon {
+  font-size: 3rem;
+  margin-bottom: .5rem;
+}
+.credit-block-modal h3 {
+  color: var(--red);
+  margin-bottom: .3rem;
+}
+.credit-block-modal .block-reason {
+  color: var(--muted);
+  font-size: .9rem;
+  margin-bottom: 1rem;
+}
+.credit-block-modal .block-actions {
+  display: flex;
+  gap: .6rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Config */
+.credit-config-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+  max-width: 500px;
+}
+.credit-config-card label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 600;
+  margin-bottom: .3rem;
+}

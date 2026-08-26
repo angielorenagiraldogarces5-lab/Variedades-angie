@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Variedades Angie — Sistema de Inventario</title>
   <link rel="stylesheet" href="/css/styles.css?v=20260825">
+  <link rel="stylesheet" href="/css/credit.css?v=20260825">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛍️</text></svg>">
 </head>
 <body>
@@ -51,6 +52,7 @@
         <button data-view="caja" class="nav-item"><span>💵</span> Caja / Arqueo</button>
         <button data-view="contabilidad" class="nav-item admin-only"><span>📒</span> Contabilidad</button>
         <button data-view="usuarios" class="nav-item admin-only"><span>👥</span> Colaboradores</button>
+        <button data-view="credit" class="nav-item"><span>🛡️</span> Estudio Crediticio</button>
         <button data-view="config" class="nav-item admin-only"><span>⚙️</span> Configuración</button>
       </nav>
       <div class="sidebar-footer">
@@ -431,6 +433,28 @@
         </div>
       </section>
 
+      <!-- Estudio Crediticio -->
+      <section id="view-credit" class="view">
+        <header class="view-header">
+          <h2>🛡️ Estudio Crediticio</h2>
+          <button class="btn btn-outline" onclick="loadBlacklist()">↻ Actualizar</button>
+        </header>
+        <div class="credit-tabs" id="credit-tabs"></div>
+        <div id="credit-panel-blacklist" class="credit-panel active">
+          <div id="credit-blacklist-content"></div>
+        </div>
+        <div id="credit-panel-history" class="credit-panel">
+          <div class="toolbar">
+            <input type="search" id="credit-history-search" placeholder="Buscar por nombre del cliente...">
+            <button class="btn btn-primary" onclick="searchCreditHistory()">🔍 Buscar</button>
+          </div>
+          <div id="credit-history-content"></div>
+        </div>
+        <div id="credit-panel-config" class="credit-panel">
+          <div id="credit-config-content"></div>
+        </div>
+      </section>
+
       <!-- Configuración -->
       <section id="view-config" class="view">
         <header class="view-header">
@@ -490,5 +514,6 @@
   <div id="toast-container"></div>
 
   <script src="/js/app.js?v=20260825"></script>
+  <script src="/js/credit.js?v=20260825"></script>
 </body>
 </html>

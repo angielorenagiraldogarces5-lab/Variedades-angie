@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
+const { checkBlocked } = require('../credit/utils');
 
 const PAYMENT_METHODS = ['efectivo', 'tarjeta', 'transferencia', 'fiado'];
 
@@ -133,6 +134,16 @@ router.post('/', authenticate, (req, res) => {
     }
 
     if (total <= 0) throw Object.assign(new Error('El total de la factura debe ser mayor que cero'), { status: 400 });
+
+    // Verificar bloqueo crediticio si es fiado
+    if (isFiado) {
+      const clientNameForCheck = client.name || '';
+      const customerIdForCheck = customer_id || null;
+      const blocked = checkBlocked(clientNameForCheck, customerIdForCheck);
+      if (blocked) {
+        throw Object.assign(new Error(`Cliente bloqueado: ${blocked.reason || 'Sin motivo'} — No se puede fiar a este cliente`), { status: 403 });
+      }
+    }
 
     const commissionAmount = Math.round(total * rate / 100);
 

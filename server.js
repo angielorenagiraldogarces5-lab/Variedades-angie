@@ -29,6 +29,7 @@ app.use('/api/suppliers', require('./src/routes/suppliers'));
 app.use('/api/cashregister', require('./src/routes/cashregister'));
 app.use('/api/daily-fiados', require('./src/routes/fiados_cortos'));
 app.use('/api/accounting', require('./src/routes/accounting'));
+app.use('/api/credit', require('./src/credit/routes'));
 
 // Health check para mantener vivo en Render / Railway / etc.
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));

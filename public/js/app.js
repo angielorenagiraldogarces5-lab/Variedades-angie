@@ -214,6 +214,7 @@ function switchView(name) {
   if (name === 'usuarios') loadUsersTable();
   if (name === 'comisiones') initCommissionsView();
   if (name === 'config') loadSettings();
+  if (name === 'credit') initCreditView();
 }
 
 /* ================= DASHBOARD ================= */
@@ -995,13 +996,32 @@ async function createInvoice() {
     }
   }
 
+  // Verificar bloqueo crediticio si es fiado
+  const paymentMethod = document.getElementById('pos-payment').value;
+  if (paymentMethod === 'fiado' && typeof checkPosBlocked === 'function') {
+    const clientName = document.getElementById('pos-client-name').value.trim();
+    const customerId = document.getElementById('pos-customer').value;
+    let customerName = clientName;
+    if (!customerName && customerId) {
+      const sel = document.getElementById('pos-customer');
+      customerName = sel.selectedOptions[0]?.textContent?.split(' — ')[0]?.trim() || '';
+    }
+    if (customerName) {
+      const blocked = await checkPosBlocked(customerName);
+      if (blocked) {
+        showBlockedModal(blocked, () => createInvoice());
+        return;
+      }
+    }
+  }
+
   const body = {
     items: [...cart.values()].map(e => e.kind === 'product'
       ? { product_id: e.product.id, quantity: e.qty }
       : { name: e.name.trim(), unit_price: Number(e.price), quantity: e.qty }),
     customer_id: document.getElementById('pos-customer').value || null,
     seller_user_id: document.getElementById('pos-seller').value || null,
-    payment_method: document.getElementById('pos-payment').value,
+    payment_method: paymentMethod,
     client_name: document.getElementById('pos-client-name').value.trim(),
     client_address: document.getElementById('pos-client-address').value.trim(),
     client_phone: document.getElementById('pos-client-phone').value.trim(),
@@ -1016,7 +1036,13 @@ async function createInvoice() {
     resetPos();
     loadPosProducts();
     printInvoice(invoiceId);
-  } catch (err) { toast(err.message, 'error'); }
+  } catch (err) {
+    if (err.message && err.message.includes('bloqueado')) {
+      toast(err.message, 'error');
+    } else {
+      toast(err.message, 'error');
+    }
+  }
 }
 
 /* ================= FACTURAS ================= */
