@@ -400,6 +400,138 @@
   margin-top: 1rem;
 }
 
+/* ============ ESTUDIO PREVIO PARA CREAR FIADOS ============ */
+.credit-study-modal {
+  padding: .5rem 0;
+}
+.credit-study-search {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.credit-study-search input {
+  flex: 1;
+  padding: .6rem .9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: .9rem;
+  font-family: inherit;
+}
+.credit-study-search input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.credit-study-result {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: none;
+}
+.credit-study-result.visible { display: block; }
+.credit-study-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  flex-wrap: wrap;
+}
+.credit-study-header.blocked { background: #fee2e2; border-bottom: 2px solid var(--red); }
+.credit-study-header.warning { background: #fef3c7; border-bottom: 2px solid var(--amber); }
+.credit-study-header.ok { background: #dcfce7; border-bottom: 2px solid var(--green); }
+.credit-study-header.new-client { background: #e0f2fe; border-bottom: 2px solid #2563eb; }
+.credit-study-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+.credit-study-header.blocked .credit-study-avatar { background: var(--red); }
+.credit-study-header.warning .credit-study-avatar { background: var(--amber); }
+.credit-study-header.ok .credit-study-avatar { background: var(--green); }
+.credit-study-header.new-client .credit-study-avatar { background: #2563eb; }
+.credit-study-name { font-size: 1.05rem; font-weight: 700; margin: 0; }
+.credit-study-sub { font-size: .78rem; color: var(--muted); margin: .1rem 0 0; }
+.credit-study-decision {
+  margin-left: auto;
+  padding: .35rem .9rem;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: .78rem;
+  letter-spacing: .03em;
+  color: #fff;
+}
+.credit-study-body { padding: 1rem 1.2rem; }
+.credit-study-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: .5rem;
+  margin-bottom: .8rem;
+}
+.credit-study-kpi {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .7rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.credit-study-kpi-icon { font-size: 1.1rem; flex-shrink: 0; }
+.credit-study-kpi-value { display: block; font-weight: 700; font-size: .95rem; line-height: 1.1; }
+.credit-study-kpi-value.red { color: var(--red); }
+.credit-study-kpi-value.green { color: var(--green); }
+.credit-study-kpi-label { display: block; font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.credit-study-factors {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  margin-bottom: .8rem;
+}
+.credit-study-factor {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .4rem .65rem;
+  border-radius: 6px;
+  font-size: .82rem;
+  font-weight: 500;
+}
+.credit-study-factor.positive { background: #dcfce7; color: #166534; }
+.credit-study-factor.negative { background: #fef3c7; color: #92400e; }
+.credit-study-factor.critical { background: #fee2e2; color: #991b1b; }
+.credit-study-factor.info { background: #e0f2fe; color: #075985; }
+.credit-study-factor.warning { background: #fef3c7; color: #92400e; }
+.credit-study-footer {
+  padding: .8rem 1.2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.credit-study-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+}
+.credit-study-loading .spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: credit-spin .7s linear infinite;
+  margin-bottom: .5rem;
+}
+@keyframes credit-spin { to { transform: rotate(360deg); } }
+
 /* Config */
 .credit-config-card {
   background: var(--card);

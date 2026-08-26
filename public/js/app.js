@@ -1838,11 +1838,170 @@ function renderManualCards(cards) {
   : '<p class="pos-empty" style="grid-column:1/-1;padding:3rem 0">No hay tarjetas aquí. Crea la primera con "＋ Nueva tarjeta".</p>';
 }
 
-function openCardModal(card = null) {
+/* ============ ESTUDIO CREDITICIO PREVIO PARA CREAR FIADOS ============ */
+function openCreditStudyBeforeFiado(onApproved) {
+  openModal('🛡️ Estudio de Crédito — Verificación previa', `
+    <div class="credit-study-modal">
+      <p class="config-hint" style="margin-bottom:.8rem">Ingresa el nombre del cliente para verificar su estado crediticio antes de crear el fiado.</p>
+      <div class="credit-study-search">
+        <input type="text" id="cs-name" placeholder="Nombre del cliente..." maxlength="80" autofocus>
+        <button class="btn btn-primary" id="cs-verify-btn">🔍 Verificar</button>
+      </div>
+      <div id="cs-result" class="credit-study-result"></div>
+    </div>`);
+
+  const input = document.getElementById('cs-name');
+  const btn = document.getElementById('cs-verify-btn');
+  const doSearch = () => runCreditStudy(onApproved);
+  btn.addEventListener('click', doSearch);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+}
+
+async function runCreditStudy(onApproved) {
+  const name = document.getElementById('cs-name')?.value.trim();
+  if (!name) return;
+  const box = document.getElementById('cs-result');
+  box.className = 'credit-study-result visible';
+  box.innerHTML = '<div class="credit-study-loading"><div class="spinner"></div><br>Consultando historial crediticio...</div>';
+
+  try {
+    const history = await api('/credit/history/' + encodeURIComponent(name));
+    renderCreditStudyResult(history, onApproved);
+  } catch {
+    renderCreditStudyNewClient(name, onApproved);
+  }
+}
+
+function renderCreditStudyNewClient(name, onApproved) {
+  const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const box = document.getElementById('cs-result');
+  box.innerHTML = `
+    <div class="credit-study-header new-client">
+      <div class="credit-study-avatar">${initials}</div>
+      <div>
+        <p class="credit-study-name">${esc(name)}</p>
+        <p class="credit-study-sub">Cliente nuevo — sin historial crediticio previo</p>
+      </div>
+      <span class="credit-study-decision" style="background:#2563eb">NUEVO</span>
+    </div>
+    <div class="credit-study-body">
+      <div class="credit-study-factors">
+        <div class="credit-study-factor info"><span>📋</span> Sin historial previo — se evaluará con el primer fiado</div>
+      </div>
+      <p style="margin:0;font-size:.82rem;color:var(--muted)">Este cliente no tiene facturas fiadas, tarjetas ni fiados del día registrados. Puedes continuar con la creación.</p>
+    </div>
+    <div class="credit-study-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="cs-continue-btn">✅ Continuar y crear fiado</button>
+    </div>`;
+  document.getElementById('cs-continue-btn').addEventListener('click', () => { closeModal(); onApproved(name); });
+}
+
+function renderCreditStudyResult(h, onApproved) {
+  const box = document.getElementById('cs-result');
+  const r = h.risk || { level: 'bajo', decision: 'aprobado', factors: [], total_transactions: 0, overdue_count: 0, on_time_count: 0, max_debt: 0 };
+  const deuda = h.totals.deuda_actual;
+  const initials = h.customer_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+  const isBlocked = !!h.blocked;
+  const headerClass = isBlocked ? 'blocked' : r.decision === 'denegado' ? 'blocked' : r.decision === 'revision' ? 'warning' : 'ok';
+  const decisionLabels = { aprobado: '✅ APROBADO', revision: '⚠️ EN REVISIÓN', denegado: '🚫 DENEGADO' };
+  const decisionColors = { aprobado: 'var(--green)', revision: 'var(--amber)', denegado: 'var(--red)' };
+  const riskIcons = { alto: '🔴', medio: '🟡', bajo: '🟢' };
+
+  let html = `
+    <div class="credit-study-header ${headerClass}">
+      <div class="credit-study-avatar">${initials}</div>
+      <div>
+        <p class="credit-study-name">${esc(h.customer_name)}</p>
+        <p class="credit-study-sub">${riskIcons[r.level] || '🟢'} Riesgo: ${r.level.toUpperCase()} · Score: ${h.score}%</p>
+      </div>
+      <span class="credit-study-decision" style="background:${isBlocked ? 'var(--red)' : decisionColors[r.decision]}">${isBlocked ? '🚫 BLOQUEADO' : decisionLabels[r.decision]}</span>
+    </div>
+    <div class="credit-study-body">
+      <div class="credit-study-kpis">
+        <div class="credit-study-kpi">
+          <span class="credit-study-kpi-icon">📊</span>
+          <div><span class="credit-study-kpi-value">${r.total_transactions}</span><span class="credit-study-kpi-label">Transacciones</span></div>
+        </div>
+        <div class="credit-study-kpi">
+          <span class="credit-study-kpi-icon">💰</span>
+          <div><span class="credit-study-kpi-value">${money(h.totals.total_fiado)}</span><span class="credit-study-kpi-label">Total fiado</span></div>
+        </div>
+        <div class="credit-study-kpi">
+          <span class="credit-study-kpi-icon">✅</span>
+          <div><span class="credit-study-kpi-value green">${money(h.totals.total_pagado)}</span><span class="credit-study-kpi-label">Total pagado</span></div>
+        </div>
+        <div class="credit-study-kpi">
+          <span class="credit-study-kpi-icon">🔴</span>
+          <div><span class="credit-study-kpi-value ${deuda > 0 ? 'red' : ''}">${money(deuda)}</span><span class="credit-study-kpi-label">Deuda actual</span></div>
+        </div>
+      </div>`;
+
+  if (isBlocked) {
+    html += `
+      <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:.7rem .9rem;margin-bottom:.7rem">
+        <strong style="color:#991b1b">⛔ CLIENTE BLOQUEADO</strong><br>
+        <span style="font-size:.82rem;color:#991b1b">Motivo: ${esc(h.blocked.reason || 'Sin especificar')} · Desde ${fmtDate(h.blocked.blocked_at)}</span>
+      </div>`;
+  }
+
+  if (deuda > 0 && !isBlocked) {
+    html += `
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:.7rem .9rem;margin-bottom:.7rem">
+        <strong style="color:#92400e">⚠️ DEUDA PENDIENTE</strong><br>
+        <span style="font-size:.82rem;color:#92400e">El cliente debe ${money(deuda)} por créditos anteriores.</span>
+      </div>`;
+  }
+
+  if (r.factors.length) {
+    html += '<div class="credit-study-factors">';
+    for (const f of r.factors) {
+      html += `<div class="credit-study-factor ${f.type}"><span>${f.icon}</span> ${esc(f.label)}</div>`;
+    }
+    html += '</div>';
+  }
+
+  const canContinue = !isBlocked && r.decision !== 'denegado';
+
+  if (canContinue) {
+    html += `<p style="margin:0;font-size:.82rem;color:var(--muted)">Puedes continuar con la creación del fiado para este cliente.</p>`;
+  } else {
+    html += `<p style="margin:0;font-size:.82rem;color:var(--red);font-weight:600">${isBlocked ? 'No se puede crear fiado: el cliente está bloqueado. Desbloquealo primero desde Estudio Crediticio.' : 'No se recomienda crear un nuevo fiado para este cliente. Riesgo alto.'}</p>`;
+  }
+
+  html += `
+    </div>
+    <div class="credit-study-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      ${canContinue ? `<button class="btn btn-primary" id="cs-continue-btn">✅ Continuar y crear fiado</button>` : ''}
+      ${isBlocked ? `<button class="btn btn-green" id="cs-unblock-btn">🔓 Desbloquear cliente</button>` : ''}
+    </div>`;
+
+  box.innerHTML = html;
+
+  if (canContinue) {
+    document.getElementById('cs-continue-btn').addEventListener('click', () => { closeModal(); onApproved(h.customer_name); });
+  }
+  if (isBlocked) {
+    document.getElementById('cs-unblock-btn').addEventListener('click', async () => {
+      try {
+        await api('/credit/blacklist/' + h.blocked.id, { method: 'DELETE' });
+        toast('Cliente desbloqueado');
+        runCreditStudy(onApproved);
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  }
+}
+
+function openCardModal(card = null, skipStudy = false, prefilledName = '') {
+  if (!card && !skipStudy) {
+    return openCreditStudyBeforeFiado((name) => openCardModal(null, true, name));
+  }
   openModal(card ? 'Editar tarjeta de cobro' : 'Nueva tarjeta de cobro', `
     <form id="fcard-form">
       <div class="form-grid">
-        <div class="full"><label>Nombre del cliente *</label><input name="customer_name" required maxlength="80" value="${esc(card?.customer_name || '')}" placeholder="Ej: María Gómez"></div>
+        <div class="full"><label>Nombre del cliente *</label><input name="customer_name" required maxlength="80" value="${esc(card?.customer_name || prefilledName || '')}" placeholder="Ej: María Gómez"></div>
         <div><label>Teléfono</label><input name="phone" maxlength="40" value="${esc(card?.phone || '')}"></div>
         <div><label>Ciudad</label><input name="city" maxlength="60" value="${esc(card?.city || '')}"></div>
         <div class="full"><label>Dirección</label><input name="address" maxlength="120" value="${esc(card?.address || '')}" placeholder="Calle y altura, ciudad..."></div>
@@ -3306,7 +3465,10 @@ async function loadDailyFiados() {
   } catch (err) { toast(err.message, 'error'); }
 }
 
-function openDailyFiadoModal() {
+function openDailyFiadoModal(skipStudy = false, prefilledName = '') {
+  if (!skipStudy) {
+    return openCreditStudyBeforeFiado((name) => openDailyFiadoModal(true, name));
+  }
   const today = isoDate(new Date());
   openModal('Nuevo Fiado del Día', `
     <form id="daily-fiado-form">
@@ -3321,7 +3483,7 @@ function openDailyFiadoModal() {
             <option value="mensual">Mensual</option>
           </select>
         </div>
-        <div class="full"><label>Nombre del cliente *</label><input name="customer_name" required placeholder="Ej: Juan Pérez"></div>
+        <div class="full"><label>Nombre del cliente *</label><input name="customer_name" required placeholder="Ej: Juan Pérez" value="${esc(prefilledName || '')}"></div>
         <div><label>Teléfono</label><input name="phone" placeholder="Opcional"></div>
         <div><label>Monto total *</label><input type="number" name="amount" min="1" step="1" required placeholder="0"></div>
         <div class="full"><label>Descripción *</label><input name="description" required placeholder="Ej: 2 pañales + detergente"></div>
