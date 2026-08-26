@@ -2,7 +2,7 @@
 let token = localStorage.getItem('token') || null;
 let currentUser = null;
 let storeSettings = { store_name: 'Variedades Angie', nit: '', address: '', phone: '', commission_rate: '15', invoice_footer: '' };
-const moneyFmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const moneyFmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function money(n) { return '$' + moneyFmt.format(Math.round(Number(n) || 0)); }
 function esc(s) {
@@ -2815,7 +2815,7 @@ async function loadCashRegisters() {
         ${list.length ? list.map(cr => {
           const diffClass = cr.difference > 0 ? 'positive' : cr.difference < 0 ? 'negative' : '';
           const diffLabel = cr.status === 'cerrada'
-            ? (cr.difference > 0 ? `<span class="positive">+$${Math.abs(cr.difference).toLocaleString('es-AR')}</span>` : cr.difference < 0 ? `<span class="negative">-$${Math.abs(cr.difference).toLocaleString('es-AR')}</span>` : '$0')
+            ? (cr.difference > 0 ? `<span class="positive">+$${Math.abs(cr.difference).toFixed(2)}</span>` : cr.difference < 0 ? `<span class="negative">-$${Math.abs(cr.difference).toFixed(2)}</span>` : '$0.00')
             : '—';
           return `<tr>
             <td><strong>#${cr.number}</strong></td>
@@ -2921,8 +2921,8 @@ function closeCashRegisterModal(crId) {
     try {
       const r = await api(`/cashregister/${crId}/close`, { method: 'POST', body: Object.fromEntries(new FormData(f)) });
       closeModal();
-      if (r.difference > 0) toast(`Caja cerrada. Sobrante: $${r.difference.toLocaleString('es-AR')}`, 'success');
-      else if (r.difference < 0) toast(`Caja cerrada. Faltante: $${Math.abs(r.difference).toLocaleString('es-AR')}`, 'error');
+      if (r.difference > 0) toast(`Caja cerrada. Sobrante: $${r.difference.toFixed(2)}`, 'success');
+      else if (r.difference < 0) toast(`Caja cerrada. Faltante: $${Math.abs(r.difference).toFixed(2)}`, 'error');
       else toast('Caja cerrada. Todo cuadra');
       loadCashRegisters();
     } catch (err) { f.querySelector('.form-error').textContent = err.message; }
@@ -2940,7 +2940,7 @@ async function viewCashRegister(crId) {
         <div class="stat-card"><span class="stat-icon">📉</span><h3 class="negative">${money(cr.total_expenses)}</h3><p>Egresos</p></div>
         <div class="stat-card"><span class="stat-icon">🧮</span><h3>${money(cr.expected_total)}</h3><p>Esperado</p></div>
       </div>
-      ${cr.status === 'cerrada' ? `<p class="config-hint">Cerrada por ${esc(cr.closed_by)} · Contado: ${money(cr.counted_amount)} · Diferencia: ${cr.difference >= 0 ? '+' : ''}$${cr.difference.toLocaleString('es-AR')}${cr.close_notes ? ' · ' + esc(cr.close_notes) : ''}</p>` : ''}
+      ${cr.status === 'cerrada' ? `<p class="config-hint">Cerrada por ${esc(cr.closed_by)} · Contado: ${money(cr.counted_amount)} · Diferencia: ${cr.difference >= 0 ? '+' : ''}$${cr.difference.toFixed(2)}${cr.close_notes ? ' · ' + esc(cr.close_notes) : ''}</p>` : ''}
       <table class="mini-table">
         <thead><tr><th>#</th><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Registrado por</th><th>Fecha</th>${isOpen ? '<th></th>' : ''}</tr></thead>
         <tbody>
