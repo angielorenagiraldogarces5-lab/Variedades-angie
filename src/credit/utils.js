@@ -41,6 +41,8 @@ function getCreditHistory(customerName) {
     }
   };
 
+  result.blocked = checkBlocked(name);
+
   // Facturas fiadas
   const invoices = db.prepare(`
     SELECT i.*, c.name AS customer_name FROM invoices i
