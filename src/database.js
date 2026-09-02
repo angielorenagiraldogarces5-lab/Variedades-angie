@@ -216,6 +216,8 @@ CREATE TABLE IF NOT EXISTS cash_movements (
   concept TEXT NOT NULL,
   amount REAL NOT NULL CHECK (amount > 0),
   user_id INTEGER REFERENCES users(id),
+  ref_source TEXT DEFAULT '',
+  ref_id INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
@@ -382,6 +384,12 @@ const invCols = db.prepare("PRAGMA table_info(invoices)").all().map(c => c.name)
 if (!invCols.includes('seller_user_id')) db.exec('ALTER TABLE invoices ADD COLUMN seller_user_id INTEGER REFERENCES users(id)');
 if (!invCols.includes('commission_rate')) db.exec('ALTER TABLE invoices ADD COLUMN commission_rate REAL');
 if (!invCols.includes('commission_amount')) db.exec('ALTER TABLE invoices ADD COLUMN commission_amount REAL');
+
+/* Vínculo de movimientos de caja con los abonos que los originan
+   (evita doble contabilización al generar asientos) */
+const cmCols = db.prepare("PRAGMA table_info(cash_movements)").all().map(c => c.name);
+if (!cmCols.includes('ref_source')) db.exec('ALTER TABLE cash_movements ADD COLUMN ref_source TEXT DEFAULT \'\'');
+if (!cmCols.includes('ref_id')) db.exec('ALTER TABLE cash_movements ADD COLUMN ref_id INTEGER');
 
 // Datos del negocio por defecto (editables desde Configuración).
 // Si falta alguna clave (p. ej. al agregar nuevas), se agrega automáticamente.

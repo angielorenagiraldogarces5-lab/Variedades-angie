@@ -2,6 +2,7 @@ const router = require('express').Router();
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { checkBlocked } = require('../credit/utils');
+const { registerCashIngreso } = require('../cashLib');
 
 const PAYMENT_TYPES = ['semanal', 'quincenal', 'mensual', 'colaborador'];
 const METHODS = ['efectivo', 'transferencia', 'otro'];
@@ -446,8 +447,9 @@ router.post('/cards/:id/payments', authenticate, (req, res) => {
 
   db.exec('BEGIN IMMEDIATE');
   try {
-    db.prepare('INSERT INTO fiado_payments (card_id, amount, method, notes, user_id, payment_date) VALUES (?, ?, ?, ?, ?, ?)')
+    const payInfo = db.prepare('INSERT INTO fiado_payments (card_id, amount, method, notes, user_id, payment_date) VALUES (?, ?, ?, ?, ?, ?)')
       .run(card.id, amount, method, notes, req.user.id, pd.date);
+    registerCashIngreso(db, amount, `Abono tarjeta — ${card.customer_name}`, req.user.id, 'fiado_pago', Number(payInfo.lastInsertRowid));
 
     const newPaid = card.paid_amount + amount;
     if (newPaid >= card.amount) {
@@ -474,6 +476,12 @@ router.post('/cards/:id/void', authenticate, requireAdmin, (req, res) => {
   const info = db.prepare("UPDATE fiado_cards SET status = 'anulada' WHERE id = ? AND status = 'pendiente'").run(req.params.id);
   if (info.changes === 0) return res.status(400).json({ error: 'Solo se pueden anular tarjetas pendientes' });
   res.json({ message: 'Tarjeta anulada' });
+});
+
+router.post('/cards/:id/reactivate', authenticate, requireAdmin, (req, res) => {
+  const info = db.prepare("UPDATE fiado_cards SET status = 'pendiente' WHERE id = ? AND status = 'anulada'").run(req.params.id);
+  if (info.changes === 0) return res.status(400).json({ error: 'Solo se pueden reactivar tarjetas anuladas' });
+  res.json({ message: 'Tarjeta reactivada' });
 });
 
 router.delete('/cards/:id', authenticate, requireAdmin, (req, res) => {
@@ -587,10 +595,12 @@ router.post('/customers/:customerId/payments', authenticate, (req, res) => {
       remaining -= applied;
     }
 
-    db.prepare(`
+    const payInfo = db.prepare(`
       INSERT INTO invoice_payments (customer_id, invoice_id, amount, method, notes, user_id, payment_date)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(customer.id, invoiceId, amount, method, notes || ('Abono a ' + touched.join(', ')), req.user.id, pd.date);
+
+    registerCashIngreso(db, amount, `Abono factura fiada — ${customer.name}`, req.user.id, 'fiado_factura_pago', Number(payInfo.lastInsertRowid));
 
     db.exec('COMMIT');
     res.json({ message: `Abono de $${amount} registrado para ${customer.name}` });

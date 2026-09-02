@@ -2,6 +2,7 @@ const router = require('express').Router();
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { checkBlocked } = require('../credit/utils');
+const { registerCashIngreso } = require('../cashLib');
 
 const PLAZOS = ['diario', '8dias', 'semanal', 'quincenal', 'mensual'];
 const METHODS = ['efectivo', 'transferencia', 'otro'];
@@ -189,8 +190,9 @@ router.post('/:id/payments', authenticate, (req, res) => {
 
   db.exec('BEGIN IMMEDIATE');
   try {
-    db.prepare('INSERT INTO daily_fiado_payments (fiado_id, amount, method, notes, user_id, payment_date) VALUES (?, ?, ?, ?, ?, ?)')
+    const payInfo = db.prepare('INSERT INTO daily_fiado_payments (fiado_id, amount, method, notes, user_id, payment_date) VALUES (?, ?, ?, ?, ?, ?)')
       .run(fiado.id, amount, method, notes, req.user.id, paymentDate);
+    registerCashIngreso(db, amount, `Abono fiado del día — ${fiado.customer_name}`, req.user.id, 'fiado_dia_pago', Number(payInfo.lastInsertRowid));
 
     const newPaid = fiado.paid_amount + amount;
     if (newPaid >= fiado.amount) {
@@ -220,7 +222,17 @@ router.post('/:id/mark-paid', authenticate, (req, res) => {
   if (!fiado) return res.status(404).json({ error: 'Fiado no encontrado' });
   if (fiado.status === 'pagada') return res.status(400).json({ error: 'Ya está pagado' });
 
-  db.prepare("UPDATE daily_fiados SET paid_amount = amount, status = 'pagada' WHERE id = ?").run(fiado.id);
+  const cobro = fiado.amount - fiado.paid_amount;
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    registerCashIngreso(db, cobro, `Fiado del día pagado — ${fiado.customer_name}`, req.user.id);
+    db.prepare("UPDATE daily_fiados SET paid_amount = amount, status = 'pagada' WHERE id = ?").run(fiado.id);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    return res.status(e.status || 500).json({ error: e.message || 'Error al marcar como pagado' });
+  }
   res.json({ message: `${fiado.customer_name} marcado como pagado` });
 });
 

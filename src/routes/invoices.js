@@ -2,6 +2,7 @@ const router = require('express').Router();
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { checkBlocked } = require('../credit/utils');
+const { registerCashIngreso } = require('../cashLib');
 
 const PAYMENT_METHODS = ['efectivo', 'tarjeta', 'transferencia', 'fiado'];
 
@@ -213,7 +214,18 @@ router.post('/:id/pay', authenticate, (req, res) => {
   if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
   if (invoice.status !== 'pendiente') return res.status(400).json({ error: 'Esta factura no está pendiente de pago' });
 
-  db.prepare("UPDATE invoices SET status = 'pagada', paid_amount = total, paid_at = datetime('now','localtime') WHERE id = ?").run(invoice.id);
+  const cobro = invoice.total - invoice.paid_amount;
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    registerCashIngreso(db, cobro, `Pago factura ${invoiceNumber(invoice.number)}`, req.user.id);
+    db.prepare("UPDATE invoices SET status = 'pagada', paid_amount = total, paid_at = datetime('now','localtime') WHERE id = ?")
+      .run(invoice.id);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    return res.status(e.status || 500).json({ error: e.message || 'Error al registrar el pago' });
+  }
   res.json({ message: `Pago de la factura ${invoiceNumber(invoice.number)} registrado` });
 });
 

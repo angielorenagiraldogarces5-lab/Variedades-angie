@@ -279,6 +279,7 @@ router.post('/generate-from-collections', authenticate, requireAdmin, (req, res)
     JOIN fiado_cards fc ON fc.id = fp.card_id
     WHERE DATE(fp.created_at) >= ? AND DATE(fp.created_at) <= ?
       AND fp.id NOT IN (SELECT source_id FROM journal_entries WHERE source = 'fiado_pago' AND source_id IS NOT NULL)
+      AND NOT EXISTS (SELECT 1 FROM cash_movements cm WHERE cm.ref_source = 'fiado_pago' AND cm.ref_id = fp.id)
   `).all(from, to);
 
   // Pagos de fiados de facturas
@@ -288,6 +289,7 @@ router.post('/generate-from-collections', authenticate, requireAdmin, (req, res)
     LEFT JOIN customers c ON c.id = ip.customer_id
     WHERE DATE(ip.created_at) >= ? AND DATE(ip.created_at) <= ?
       AND ip.id NOT IN (SELECT source_id FROM journal_entries WHERE source = 'fiado_factura_pago' AND source_id IS NOT NULL)
+      AND NOT EXISTS (SELECT 1 FROM cash_movements cm WHERE cm.ref_source = 'fiado_factura_pago' AND cm.ref_id = ip.id)
   `).all(from, to);
 
   // Pagos de fiados del día
@@ -297,6 +299,7 @@ router.post('/generate-from-collections', authenticate, requireAdmin, (req, res)
     JOIN daily_fiados df ON df.id = dfp.fiado_id
     WHERE DATE(dfp.created_at) >= ? AND DATE(dfp.created_at) <= ?
       AND dfp.id NOT IN (SELECT source_id FROM journal_entries WHERE source = 'fiado_dia_pago' AND source_id IS NOT NULL)
+      AND NOT EXISTS (SELECT 1 FROM cash_movements cm WHERE cm.ref_source = 'fiado_dia_pago' AND cm.ref_id = dfp.id)
   `).all(from, to);
 
   let count = 0;
@@ -556,12 +559,14 @@ router.get('/cash-flow', authenticate, (req, res) => {
     GROUP BY payment_method
   `).all(from, to);
 
-  // Ingresos de caja
+  // Ingresos de caja (excluye los abonos de fiados, que van por separado
+  // en "ingresos_fiados" para no duplicar)
   const cashIncome = db.prepare(`
     SELECT COALESCE(SUM(amount), 0) AS total
     FROM cash_movements cm
     JOIN cash_registers cr ON cr.id = cm.cash_register_id
     WHERE cm.type = 'ingreso'
+      AND cm.ref_source IS NULL
       AND DATE(cm.created_at) >= ? AND DATE(cm.created_at) <= ?
   `).get(from, to);
 

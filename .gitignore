@@ -1,10 +1,5 @@
-__pycache__/
-*.pyc
-app-android/node_modules/
-app-android/.expo/
-app-android/.git/
-app-android/
 node_modules/
 *.log
 .env
-x
+data/inventario.db
+data/*.json
